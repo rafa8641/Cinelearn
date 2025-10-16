@@ -7,6 +7,7 @@ import Users from "./models/Users.js";
 import Recommendation from "./models/Recommendation.js";
 import recommendationRoutes from "./routes/recommendationRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import movieRoutes from "./routes/movieRoutes.js";
 import cors from "cors";
 
 
@@ -16,11 +17,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
-
 app.use("/api", recommendationRoutes);
 app.use("/api/users", userRoutes);
-
+app.use("/api/movies", movieRoutes);
 
 app.get("/ping", (req, res) => {
   res.json({ message: "API está funcionando 🚀" });

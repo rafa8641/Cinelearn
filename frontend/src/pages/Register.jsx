@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { registerUser } from "../services/authService";
+import { Link } from "react-router-dom";
+import "../styles/Register.css";
+import logo from "../assets/logo.svg";
 
 export default function Register() {
   const [userData, setUserData] = useState({
@@ -18,7 +21,7 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("📤 Enviando dados:", userData); // 👈 debug seguro
+    console.log("📤 Enviando dados:", userData);
 
     try {
       const response = await registerUser(userData);
@@ -31,25 +34,69 @@ export default function Register() {
   };
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h2>Cadastro de Usuário 🎬</h2>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", width: "300px" }}>
-        <input type="text" name="name" placeholder="Nome" onChange={handleChange} required />
-        <input type="email" name="email" placeholder="E-mail" onChange={handleChange} required />
-        <input type="password" name="password" placeholder="Senha" onChange={handleChange} required />
-        
-        <select name="role" onChange={handleChange}>
-          <option value="aluno">Aluno</option>
-          <option value="professor">Professor</option>
-          <option value="pai">Pai</option>
-        </select>
+    <div className="register-container">
+      <div className="register-card">
+        <h2 className="register-title">Crie sua conta 🎬</h2>
 
-        <input type="number" name="age" placeholder="Idade" onChange={handleChange} required />
+        <form onSubmit={handleSubmit} className="register-form">
+          <input
+            type="text"
+            name="name"
+            placeholder="Nome completo"
+            onChange={handleChange}
+            required
+            className="register-input"
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="E-mail"
+            onChange={handleChange}
+            required
+            className="register-input"
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Senha"
+            onChange={handleChange}
+            required
+            className="register-input"
+          />
 
-        <button type="submit" style={{ marginTop: "1rem" }}>Cadastrar</button>
-      </form>
+          <select
+            name="role"
+            onChange={handleChange}
+            className="register-select"
+          >
+            <option value="aluno">Aluno</option>
+            <option value="professor">Professor</option>
+            <option value="pai">Pai</option>
+          </select>
 
-      {message && <p>{message}</p>}
+          <input
+            type="number"
+            name="age"
+            placeholder="Idade"
+            onChange={handleChange}
+            required
+            className="register-input"
+          />
+
+          <button type="submit" className="register-button">
+            Cadastrar
+          </button>
+        </form>
+
+        {message && <p className="register-message">{message}</p>}
+
+        <p className="register-login">
+          Já tem uma conta?{" "}
+          <Link to="/login" className="register-link">
+            Entrar
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

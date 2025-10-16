@@ -1,25 +1,26 @@
 import mongoose from "mongoose";
 
-const MovieSchema = new mongoose.Schema({
+const keywordSchema = new mongoose.Schema({
+  id: Number,
+  name: String,
+});
+
+const movieSchema = new mongoose.Schema({
   _id: String,
   title: String,
   originalTitle: String,
   releaseYear: Number,
-  genres: [String],
+  genres: [Object],
   educationalTags: [String],
-  keywords: [
-    {
-      id: Number,
-      name: String
-    }
-  ],
+  keywords: [keywordSchema],
   rating: String,
   language: String,
   minAge: Number,
   maxAge: Number,
-  tmdbData: mongoose.Schema.Types.Mixed
+  tmdbData: Object,
 });
 
-export default mongoose.model("Movie", MovieSchema);
+const Movie = mongoose.model("Movie", movieSchema);
 
+export default Movie;
 

@@ -1,29 +1,47 @@
-import Users from "../models/Users.js";
 import Movie from "../models/Movie.js";
 
 export const getRecommendations = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { maxAge, q } = req.query; // vem da query string
+    const filter = {};
 
-    const user = await Users.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
+    if (q) {
+      filter.title = { $regex: q, $options: "i" };
     }
 
-    const movies = await Movie.find();
+    const movies = await Movie.find(filter).lean();
 
-    const recommendations = movies.filter(movie => {
-      const movieKeywordNames = movie.keywords.map(k => k.name.toLowerCase());
-      const userKeywords = user.keywords.map(k => k.toLowerCase());
+    const ratingToAge = {
+      L: 0,
+      "L+": 0,
+      Livre: 0,
+      G: 0,
+      PG: 10,
+      "PG-13": 12,
+      "10": 10,
+      "10+": 10,
+      "12": 12,
+      "12+": 12,
+      "14": 14,
+      "14+": 14,
+      "16": 16,
+      "16+": 16,
+      R: 16,
+      "R+": 18,
+      "18": 18,
+      "18+": 18,
+      "NR+": 18,
+      "R18+": 18,
+      "XXX": 18,
+    };
 
-      const matchKeywords = userKeywords.some(k => movieKeywordNames.includes(k));
-      const matchGenres = user.genres.some(g => movie.genres.includes(g));
-      const ageOK = !movie.minimumAge || user.age >= movie.minimumAge;
-
-      return (matchKeywords || matchGenres) && ageOK;
+    const userAge = Number(maxAge || 99);
+    const filtered = movies.filter((m) => {
+      const requiredAge = ratingToAge[m.rating] ?? 0;
+      return requiredAge <= userAge;
     });
 
-    res.json(recommendations);
+    res.json({ movies: filtered });
   } catch (error) {
     console.error("Erro ao obter recomendações:", error);
     res.status(500).json({ error: "Erro interno do servidor" });

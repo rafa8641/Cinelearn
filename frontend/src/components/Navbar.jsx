@@ -1,10 +1,21 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import logo from "../assets/logo.svg";
+import "../styles/Navbar.css";
 
 export default function Navbar() {
   const { user, logout } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // 🔒 Rotas onde a Navbar padrão NÃO deve aparecer
+  const HIDE_ON = ["/student-home", "/teacher-home", "/quiz"];
+
+  // cobre rotas exatas e futuras rotas filhas (ex: /student-home/detalhe)
+  const shouldHide =
+    HIDE_ON.some((p) => location.pathname === p || location.pathname.startsWith(p + "/"));
+
+  if (shouldHide) return null; // 👈 não renderiza a Navbar aqui
 
   const handleLogout = () => {
     logout();
@@ -12,59 +23,31 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-gradient-purple"
-      style={{
-        color: "white",
-        padding: "15px",
-        display: "flex",
-        justifyContent: "space-between",
-      }}
-    >
-        <Link to="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-        <img src={logo} alt="CineLearn" style={{ height: "40px"}} />
-        </Link>
-      
-      <div style={{ display: "flex", gap: "15px" }}>
+    <nav className="navbar bg-gradient-purple">
+      <Link to="/" className="navbar-logo">
+        <img src={logo} alt="CineLearn" className="navbar-img" />
+      </Link>
+
+      <div className="navbar-links">
         {!user ? (
           <>
-            <Link to="/" style={{ color: "white", textDecoration: "none" }}>
-              Início
-            </Link>
-            <Link to="/login" style={{ color: "white", textDecoration: "none" }}>
-              Login
-            </Link>
-            <Link
-              to="/register"
-              style={{ color: "white", textDecoration: "none" }}
-            >
-              Cadastro
-            </Link>
+            <Link to="/" className="navbar-link">Início</Link>
+            <Link to="/login" className="navbar-link">Login</Link>
+            <Link to="/register" className="navbar-link">Cadastro</Link>
           </>
         ) : (
           <>
-            <span>Olá, {user.name.split(" ")[0]} 👋</span>
+            <span className="navbar-user">Olá, {user.name.split(" ")[0]} 👋</span>
             <Link
               to={user.role === "aluno" ? "/student-home" : "/teacher-home"}
-              style={{ color: "white", textDecoration: "none" }}
+              className="navbar-link"
             >
               Minha Página
             </Link>
-            <button
-              onClick={handleLogout}
-              style={{
-                background: "none",
-                border: "1px solid white",
-                color: "white",
-                cursor: "pointer",
-                padding: "4px 8px",
-              }}
-            >
-              Sair
-            </button>
+            <button onClick={handleLogout} className="navbar-logout">Sair</button>
           </>
         )}
       </div>
     </nav>
   );
 }
-

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { loginUser } from "../services/authService";
 import { useUser } from "../context/UserContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import "../styles/Login.css";
 
 export default function Login() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -18,8 +19,7 @@ export default function Login() {
     try {
       const data = await loginUser(credentials);
       setMessage("Login realizado com sucesso!");
-      login(data.user); // salva usuário no contexto
-      // redireciona baseado no tipo de usuário
+      login(data.user);
       if (data.user.role === "professor" || data.user.role === "pai") {
         navigate("/teacher-home");
       } else {
@@ -32,26 +32,38 @@ export default function Login() {
   };
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h2>Entrar no CineLearn 🎥</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          name="email"
-          placeholder="E-mail"
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Senha"
-          onChange={handleChange}
-          required
-        />
-        <button type="submit">Entrar</button>
-      </form>
-      {message && <p>{message}</p>}
+    <div className="login-container">
+      <div className="login-card">
+        <h2 className="login-title">Entrar no CineLearn 🎥</h2>
+        <form onSubmit={handleSubmit} className="login-form">
+          <input
+            type="email"
+            name="email"
+            placeholder="E-mail"
+            onChange={handleChange}
+            required
+            className="login-input"
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Senha"
+            onChange={handleChange}
+            required
+            className="login-input"
+          />
+          <button type="submit" className="login-button">
+            Entrar
+          </button>
+        </form>
+        {message && <p className="login-message">{message}</p>}
+        <p className="login-register">
+          Ainda não tem uma conta?{" "}
+          <Link to="/register" className="login-link">
+            Cadastre-se
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
