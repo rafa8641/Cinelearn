@@ -1,0 +1,85 @@
+.navbar-student {
+  background: linear-gradient(90deg, #6a0dad, #9b59b6);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px;
+  font-family: "Poppins", sans-serif;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+}
+
+.navbar-logo img {
+  height: 40px;
+}
+
+.navbar-search {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 0.95rem;
+  width: 250px;
+  transition: 0.2s;
+}
+
+.navbar-search::placeholder {
+  color: #eee;
+}
+
+.navbar-search:focus {
+  background: rgba(255, 255, 255, 0.25);
+  outline: none;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.navbar-link {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.navbar-link:hover {
+  opacity: 0.8;
+}
+
+.navbar-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-avatar {
+  height: 38px;
+  width: 38px;
+  border-radius: 50%;
+  border: 2px solid white;
+  object-fit: cover;
+}
+
+.navbar-logout {
+  background: none;
+  border: 1px solid white;
+  border-radius: 6px;
+  color: white;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.navbar-logout:hover {
+  background: white;
+  color: #6a0dad;
+}
