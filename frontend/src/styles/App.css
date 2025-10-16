@@ -1,0 +1,32 @@
+body {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  background-color: #222;
+  color: white;
+  padding: 10px 20px;
+  align-items: center;
+}
+
+.navbar-links {
+  list-style: none;
+  display: flex;
+  gap: 15px;
+}
+
+.navbar-links a {
+  color: white;
+  text-decoration: none;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: #f88;
+  cursor: pointer;
+  font-weight: bold;
+}
