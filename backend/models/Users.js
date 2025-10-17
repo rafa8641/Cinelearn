@@ -16,6 +16,7 @@ const UserSchema = new mongoose.Schema({
       answers: [String]
     }
   ],
+  photo: { type: String, default: "" }, 
   favorites: [
     {
       type: String,

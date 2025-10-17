@@ -62,11 +62,16 @@
 }
 
 .navbar-avatar {
-  height: 38px;
-  width: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  border: 2px solid white;
-  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.navbar-avatar:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
 }
 
 .navbar-logout {

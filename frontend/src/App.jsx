@@ -9,6 +9,7 @@ import Favorites from "./pages/Favorites";
 import MovieDetails from "./pages/MovieDetails";
 import StudentHome from "./pages/StudentHome";
 import TeacherHome from "./pages/TeacherHome";
+import Profile from "./pages/Profile"; 
 
 export default function App() {
   const location = useLocation();
@@ -16,7 +17,8 @@ export default function App() {
   // Define onde mostrar qual navbar
   const showStudentNavbar =
     location.pathname.startsWith("/student-home") ||
-    location.pathname.startsWith("/movie/");
+    location.pathname.startsWith("/movie/") ||
+    location.pathname.startsWith("/profile");
 
   return (
     <>
@@ -31,6 +33,7 @@ export default function App() {
         <Route path="/movie/:id" element={<MovieDetails />} />
         <Route path="/student-home" element={<StudentHome />} />
         <Route path="/teacher-home" element={<TeacherHome />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </>
   );

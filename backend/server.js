@@ -9,6 +9,8 @@ import recommendationRoutes from "./routes/recommendationRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import movieRoutes from "./routes/movieRoutes.js";
 import cors from "cors";
+import path from "path";
+import uploadRoutes from "./routes/uploadRoutes.js";
 
 
 dotenv.config();
@@ -20,6 +22,8 @@ app.use(express.json());
 app.use("/api", recommendationRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/movies", movieRoutes);
+app.use("/uploads", express.static(path.resolve("uploads")));
+app.use("/api/upload", uploadRoutes);
 
 app.get("/ping", (req, res) => {
   res.json({ message: "API está funcionando 🚀" });
