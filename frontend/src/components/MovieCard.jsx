@@ -1,4 +1,5 @@
 import "../styles/MovieCard.css";
+import { Link } from "react-router-dom";
 
 export default function MovieCard({ movie }) {
   // Garante que o caminho da imagem exista
@@ -17,17 +18,19 @@ export default function MovieCard({ movie }) {
     : "Gêneros não informados";
 
   return (
-    <div className="movie-card">
-      <img src={posterUrl} alt={movie.title} className="movie-poster" />
-      <div className="movie-info">
-        <h3>{movie.title}</h3>
-        <p className="movie-overview">{overview}</p>
-        <p className="movie-meta">
-          <span>{movie.releaseYear}</span> •{" "}
-          <span>{movie.rating ? `${movie.rating}+` : "Livre"}</span>
-        </p>
-        <p className="movie-genres">{genres}</p>
+     <Link to={`/movie/${movie._id}`} style={{ textDecoration: "none" }}>
+      <div className="movie-card">
+        <img src={posterUrl} alt={movie.title} className="movie-poster" />
+        <div className="movie-info">
+          <h3>{movie.title}</h3>
+          <p className="movie-overview">{overview}</p>
+          <p className="movie-meta">
+            <span>{movie.releaseYear}</span> •{" "}
+            <span>{movie.rating ? `${movie.rating}+` : "Livre"}</span>
+          </p>
+          <p className="movie-genres">{genres}</p>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }

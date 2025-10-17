@@ -1,0 +1,192 @@
+/* ==========================
+🎬 Estilo da Página de Detalhes do Filme
+========================== */
+
+.movie-details-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+  padding: 4rem;
+  padding-bottom: 0;
+  background: linear-gradient(135deg, #2d004d, #4b0082);
+  color: #f4f4f4;
+  min-height: 100vh;
+  font-family: 'Poppins', sans-serif;
+}
+
+.movie-details-informations{
+    display: flex;
+    gap: 3rem;
+    padding: 3rem;
+   
+}
+
+/* ==========================
+📸 Poster do Filme
+========================== */
+.movie-poster-section {
+  flex: 0 0 250px;
+}
+
+.movie-poster-large {
+  width: 250px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+/* ==========================
+📝 Informações do Filme
+========================== */
+.movie-info-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-top: 1rem;
+}
+
+.movie-info-section h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.movie-year {
+  font-size: 1.1rem;
+  color: #fff; 
+}
+
+/* ==========================
+⭐ Avaliação
+========================== */
+.stars {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.star {
+  font-size: 1.5rem;
+  color: #3d2a63;
+}
+
+.star.full {
+  color: gold;
+}
+
+.star.half {
+  background: linear-gradient(90deg, gold 50%, #3d2a63 50%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.numeric-rating {
+  margin-left: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #ffd700;
+}
+
+/* ==========================
+🎭 Gêneros e Favorito
+========================== */
+.movie-genres {
+    font-size: 4rem;
+    font-weight: 600;
+    color: #ffffff !important;
+}
+
+.movie-genres strong {
+    font-weight: 600;
+    font-size: 1.3rem;
+    color: #ffffff !important;
+}
+
+.movie-genres-info{
+    display: flex;
+    flex-direction: column
+}
+
+.movie-genres-fav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 0.8rem;
+}
+
+
+.favorite-button {
+  background: none;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.3s;
+}
+
+.favorite-button:hover {
+  transform: scale(1.1);
+}
+
+.favorite-button.active {
+  background-color: gold;
+  color: #2d004d;
+  border: none;
+}
+
+/* ==========================
+📖 Descrição e Palavras-chave
+========================== */
+.movie-overview {
+  margin-top: 1rem;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  max-width: 600px;
+  color: #f2e6ff;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 3rem; 
+}
+
+.details-grid h3 {
+  color: #c7a7ff;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.details-grid p {
+  font-size: 0.95rem;
+  color: #f3eaff;
+  line-height: 1.5;
+}
+
+/* ==========================
+📱 Responsividade
+========================== */
+@media (max-width: 900px) {
+  .movie-details-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .movie-poster-large {
+    width: 200px;
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+}

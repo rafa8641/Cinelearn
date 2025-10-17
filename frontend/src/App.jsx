@@ -1,5 +1,6 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import NavbarStudent from "./components/NavbarStudent"; // se tiver esse componente
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -10,9 +11,17 @@ import StudentHome from "./pages/StudentHome";
 import TeacherHome from "./pages/TeacherHome";
 
 export default function App() {
+  const location = useLocation();
+
+  // Define onde mostrar qual navbar
+  const showStudentNavbar =
+    location.pathname.startsWith("/student-home") ||
+    location.pathname.startsWith("/movie/");
+
   return (
     <>
-      <Navbar />
+      {showStudentNavbar ? <NavbarStudent /> : <Navbar />}
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />

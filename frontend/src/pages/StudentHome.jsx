@@ -50,7 +50,6 @@ export default function StudentHome() {
 
   return (
     <div className="student-home">
-      <NavbarStudent searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       <div className="student-content">
         <h2 className="student-title">Recomendações para você 🎥</h2>
