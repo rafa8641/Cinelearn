@@ -30,28 +30,52 @@ export const UserProvider = ({ children }) => {
       });
     };
 
-  const login = (userData, tokenValue) => {
-    persistUser(userData);
-    if (tokenValue) {
-      setToken(tokenValue);
-      localStorage.setItem("cinelearn_token", tokenValue);
-    }
-  };
+    // Adiciona ou remove um filme dos favoritos
+    const toggleFavorite = (movie) => {
+      setUser((prev) => {
+        if (!prev) return prev;
+        const favorites = prev.favorites || [];
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("cinelearn_user");
-    localStorage.removeItem("cinelearn_token");
-  };
+        // já está favoritado → remove
+        const exists = favorites.find((f) => f._id === movie._id);
+        const updatedFavorites = exists
+          ? favorites.filter((f) => f._id !== movie._id)
+          : [...favorites, movie];
 
-  return (
-    <UserContext.Provider
-      value={{ user, token, loading, setUser: persistUser, updateUser, setToken, login, logout }}
-    >
-      {children}
-    </UserContext.Provider>
-  );
+        const updatedUser = { ...prev, favorites: updatedFavorites };
+        localStorage.setItem("cinelearn_user", JSON.stringify(updatedUser));
+        return updatedUser;
+      });
+    };
+
+    // Verifica se o filme está favoritado
+    const isFavorite = (movieId) => {
+      return user?.favorites?.some((f) => f._id === movieId);
+    };
+
+
+      const login = (userData, tokenValue) => {
+        persistUser(userData);
+        if (tokenValue) {
+          setToken(tokenValue);
+          localStorage.setItem("cinelearn_token", tokenValue);
+        }
+      };
+
+      const logout = () => {
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem("cinelearn_user");
+        localStorage.removeItem("cinelearn_token");
+      };
+
+      return (
+        <UserContext.Provider
+          value={{ user, token, loading, setUser: persistUser, updateUser, setToken, login, logout, toggleFavorite, isFavorite }}
+        >
+          {children}
+        </UserContext.Provider>
+      );
 };
 
 export const useUser = () => useContext(UserContext);

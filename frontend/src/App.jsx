@@ -18,7 +18,8 @@ export default function App() {
   const showStudentNavbar =
     location.pathname.startsWith("/student-home") ||
     location.pathname.startsWith("/movie/") ||
-    location.pathname.startsWith("/profile");
+    location.pathname.startsWith("/profile")||
+    location.pathname.startsWith("/quiz");
 
   return (
     <>

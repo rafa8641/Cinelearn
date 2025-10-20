@@ -3,15 +3,17 @@ import { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";
 import "../styles/NavbarStudent.css";
 import logo from "../assets/logo.svg";
-import defaultAvatar from "../assets/default-avatar.png";
 
 export default function NavbarStudent() {
   const { user, logout } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Esconde busca nas páginas de detalhes
-  const hideSearch = location.pathname.startsWith("/movie/");
+  // Esconde a barra de busca nas páginas
+const hideSearch =
+  location.pathname.startsWith("/movie/") ||
+  location.pathname.startsWith("/profile") ||
+  location.pathname.startsWith("/quiz");
 
   // Busca sincronizada com ?q=
   const [value, setValue] = useState(
@@ -45,10 +47,6 @@ export default function NavbarStudent() {
     navigate("/");
   };
 
-  // ✅ garante que sempre tenha uma imagem válida
-  const photoUrl =
-    user?.photo && user.photo.trim() !== "" ? user.photo : defaultAvatar;
-
   return (
     <nav className="navbar-student">
       <div className="navbar-left">
@@ -68,15 +66,13 @@ export default function NavbarStudent() {
       </div>
 
       <div className="navbar-right">
-        <Link to="/quiz" className="navbar-link">Quiz</Link>
-        <div className="navbar-profile">
-          <Link to="/profile" title="Ver Perfil">
-            <img
-              src={photoUrl}
-              alt="Perfil"
-              className="navbar-avatar"
-              onError={(e) => (e.currentTarget.src = defaultAvatar)}
-            />
+        <Link to="/quiz" className="navbar-link">
+          Quiz
+        </Link>
+
+        <div className="navbar-user-info">
+          <Link to="/profile" className="navbar-user-name" title="Ver Perfil">
+            {user?.name ? user.name.split(" ")[0] : "Usuário"}
           </Link>
           <button onClick={handleLogout} className="navbar-logout">
             Sair

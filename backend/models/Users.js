@@ -12,9 +12,13 @@ const UserSchema = new mongoose.Schema({
   quizResults: [
     {
       quizId: String,
-      date: { type: Date, default: Date.now },
-      answers: [String]
+      answers: [String],
+      recommendations: [{ type: String, ref: "Movie" }],
+      createdAt: { type: Date, default: Date.now }, // ✅ salva automaticamente a data
     }
+  ],
+  recommendations: [
+    { type: String, ref: "Movie" }
   ],
   photo: { type: String, default: "" }, 
   favorites: [
@@ -25,4 +29,4 @@ const UserSchema = new mongoose.Schema({
   ]
 });
 
-export default mongoose.model("User", UserSchema);
+export default mongoose.model("Users", UserSchema);

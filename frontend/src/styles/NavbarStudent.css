@@ -47,7 +47,7 @@
 .navbar-link {
   color: white;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
   transition: opacity 0.2s;
 }
 
@@ -60,31 +60,35 @@
   align-items: center;
   gap: 10px;
 }
-
-.navbar-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+.navbar-user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
-.navbar-avatar:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+.navbar-user-name {
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.navbar-user-name:hover {
+  color: #c8a4ff;
 }
 
 .navbar-logout {
-  background: none;
-  border: 1px solid white;
+  background: transparent;
+  border: 2px solid #fff;
+  color: #fff;
+  padding: 6px 12px;
   border-radius: 6px;
-  color: white;
-  padding: 5px 10px;
   cursor: pointer;
-  transition: background 0.2s;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
 }
 
 .navbar-logout:hover {
-  background: white;
-  color: #6a0dad;
+  background: #fff;
+  color: #4b0082;
 }
