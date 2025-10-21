@@ -16,13 +16,15 @@ router.post("/login", loginUser);
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, photo, age } = req.body;
+    const { name, photo, age, role } = req.body;
 
-    const user = await User.findByIdAndUpdate(
-      id,
-      { ...(name && { name }), ...(photo && { photo }), ...(age && { age }) },
-      { new: true }
-    );
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (photo) updateData.photo = photo;
+    if (age) updateData.age = age;
+    if (role) updateData.role = role;
+
+    const user = await User.findByIdAndUpdate(id, updateData, { new: true });
 
     if (!user) {
       return res.status(404).json({ error: "Usuário não encontrado" });

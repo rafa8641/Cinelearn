@@ -20,7 +20,7 @@ export default function Login() {
       const data = await loginUser(credentials);
       setMessage("Login realizado com sucesso!");
       login(data.user);
-      if (data.user.role === "professor" || data.user.role === "pai") {
+      if (data.user.role === "professor") {
         navigate("/teacher-home");
       } else {
         navigate("/student-home");

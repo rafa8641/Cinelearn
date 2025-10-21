@@ -76,3 +76,30 @@ export async function fetchGraphRecommendations(userId) {
   }
 }
 
+export async function fetchMoviesWithFilters(filters) {
+  try {
+    const params = new URLSearchParams(filters);
+    const res = await fetch(`http://localhost:5000/api/movies/filter?${params.toString()}`);
+    if (!res.ok) throw new Error("Erro ao buscar filmes");
+
+    const data = await res.json();
+    return Array.isArray(data.movies) ? data : { movies: [] };
+  } catch (err) {
+    console.error("❌ Erro em fetchMoviesWithFilters:", err);
+    return { movies: [] };
+  }
+}
+
+export async function fetchGenres() {
+  try {
+    const res = await fetch("http://localhost:5000/api/movies/genres");
+    if (!res.ok) throw new Error("Erro ao buscar gêneros");
+
+    const data = await res.json();
+    // Garante que funciona tanto se o backend retornar { genres: [] } quanto []
+    return Array.isArray(data.genres) ? data.genres : data;
+  } catch (err) {
+    console.error("❌ Erro em fetchGenres:", err);
+    return [];
+  }
+}

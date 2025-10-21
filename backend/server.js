@@ -20,7 +20,6 @@ app.use(express.json());
 
 app.use("/api", recommendationRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/movies", movieRoutes);
 app.use("/uploads", express.static(path.resolve("uploads")));
 app.use("/api/upload", uploadRoutes);
 
@@ -272,78 +271,137 @@ app.get("/users/:id/recommendations", async (req, res) => {
 app.post("/api/recommendations/graph/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    const { answers } = req.body;
-    const user = await Users.findById(userId);
+    const { answers = [] } = req.body;
 
+    const user = await Users.findById(userId);
     if (!user) {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
 
-    const age = Number(user.age ?? user.preferences?.minAge ?? 0);
+    // 🔹 Extrai e normaliza respostas (em minúsculas)
+    const quizKeywords = (answers || [])
+      .flatMap(a => (Array.isArray(a) ? a : [a]))
+      .map(s => s.toString().trim().toLowerCase())
+      .filter(Boolean);
 
-    const lastQuiz = user.quizResults?.[user.quizResults.length - 1];
-    if (!lastQuiz || !Array.isArray(lastQuiz.answers) || lastQuiz.answers.length === 0) {
-      return res.status(400).json({ error: "Nenhum quiz encontrado para esse usuário" });
+    if (quizKeywords.length === 0) {
+      return res.status(400).json({ error: "Nenhuma resposta recebida para gerar recomendações" });
     }
 
-    const quizKeywords = lastQuiz.answers.map(s => s.trim().toLowerCase());
+    // 🔹 Detecta tipo (movie / tv / both)
+    let selectedType = "both";
+    if (quizKeywords.includes("filmes")) selectedType = "movie";
+    else if (quizKeywords.includes("séries") || quizKeywords.includes("series")) selectedType = "tv";
+
+    // 🔹 Detecta idade mínima (ex: “a partir de 12 anos”)
+    let selectedAge = 0;
+    const ageAnswer = quizKeywords.find(a => a.includes("anos"));
+    if (ageAnswer) {
+      const m = ageAnswer.match(/\d+/);
+      if (m) selectedAge = parseInt(m[0], 10);
+    }
+
     console.log("🔎 Keywords do quiz:", quizKeywords);
+    console.log("🎞️ Tipo selecionado:", selectedType);
+    console.log("🧒 Faixa etária mínima:", selectedAge);
 
-    // 🔥 inclui favoritos do usuário como reforço
-    let favoriteMovies = [];
-    if (user.favorites?.length) {
-      favoriteMovies = await Movie.find({ _id: { $in: user.favorites } });
-    }
+    // 1️⃣ FILTRO DE TIPO (movie / tv / both)
+    const typeFilter =
+      selectedType === "both"
+        ? {}
+        : selectedType === "movie"
+        ? {
+            $or: [
+              { "tmdbData.media_type": "movie" },
+              { "tmdbData.media_type": { $exists: false } }, // ✅ filmes sem tipo marcado
+            ],
+          }
+        : { "tmdbData.media_type": "tv" };
 
-    // Busca inicial por keywords
+    // 2️⃣ FILTRO DE IDADE
+    const ageFilter =
+      selectedAge > 0
+        ? {
+            $and: [
+              // pega filmes SEM faixa etária OU com faixa compatível
+              {
+                $or: [
+                  { minAge: null },
+                  { minAge: { $lte: selectedAge } },
+                  { minAge: { $exists: false } },
+                ],
+              },
+              {
+                $or: [
+                  { maxAge: null },
+                  { maxAge: { $gte: selectedAge } },
+                  { maxAge: { $exists: false } },
+                ],
+              },
+            ],
+          }
+        : {
+            // se o usuário não escolheu idade (ex: aluno comum)
+            $or: [{ minAge: null }, { minAge: { $lte: 18 } }, { minAge: { $exists: false } }],
+          };
+
+    // 3️⃣ BUSCA PRINCIPAL — keywords (com regex)
+    const regexKeywords = quizKeywords.map(k => new RegExp(k, "i"));
+
     let movies = await Movie.find({
-      "keywords.name": { $in: quizKeywords }
-    }).limit(100);
+      ...typeFilter,
+      ...ageFilter,
+      $or: [
+        { "keywords.name": { $in: regexKeywords } },
+        { "genres.name": { $in: regexKeywords } },
+        { genres: { $in: regexKeywords } },
+      ],
+    }).lean();
 
+    // 4️⃣ FALLBACK — se nada encontrado, relaxa o filtro
     if (!movies || movies.length === 0) {
-      const genreRegexList = quizKeywords.map(k => new RegExp(k, "i"));
-      movies = await Movie.find({ genres: { $in: genreRegexList } }).limit(100);
+      movies = await Movie.find({
+        ...typeFilter,
+        ...ageFilter,
+      }).lean();
     }
 
-    if (!movies || movies.length === 0) {
-      movies = await Movie.find().limit(30);
-    }
+    // 5️⃣ REMOVE REPETIDOS DE QUIZZES ANTERIORES
+    const prevIds = new Set(user.quizResults.flatMap(q => q.recommendations || []));
+    movies = movies.filter(m => !prevIds.has(String(m._id)));
 
-    // Aplica pesos
-    const weightedMovies = movies.map(doc => {
-      const movie = doc.toObject();
+    // 6️⃣ SCORE (pontuação)
+    const weightedMovies = movies.map(movie => {
       let score = 0;
 
-      // (A) Keywords
-      const mkCount = movie.keywords
+      // (A) similaridade por keyword
+      const mkCount = Array.isArray(movie.keywords)
         ? movie.keywords.filter(k =>
-            quizKeywords.includes(String(k.name).toLowerCase())
+            quizKeywords.includes(String(k.name || "").toLowerCase())
           ).length
         : 0;
-      score += mkCount * 5;
+      score += mkCount * 8;
 
-      // (B) Rating
-      const voteAvg = movie?.tmdbData?.vote_average || 0;
-      score += (voteAvg / 10) * 30;
+      // (B) nota TMDB
+      score += (movie.tmdbData?.vote_average || 0) * 2;
 
-      // (C) Favoritos → leve influência
-      if (favoriteMovies.find(fav => fav._id.toString() === movie._id.toString())) {
-        score += 10;
-      }
+      // (C) aleatoriedade leve
+      score += Math.random() * 3;
 
-      // (D) Idade → se faixa etária bater, bônus
-      if (movie.minAge != null && movie.maxAge != null) {
-        if (age >= movie.minAge && age <= movie.maxAge) {
-          score += 20;
+      // (D) bônus se idade for compatível
+      if (selectedAge > 0 && movie.minAge && movie.maxAge) {
+        if (selectedAge >= movie.minAge && selectedAge <= movie.maxAge) {
+          score += 10;
         }
       }
 
       return { ...movie, score };
     });
 
+    // Ordena e retorna os melhores
     weightedMovies.sort((a, b) => b.score - a.score);
-    
-      console.log(
+
+    console.log(
       "🏆 Top 5:",
       weightedMovies.slice(0, 5).map(m => `${m.title} (score ${m.score.toFixed(1)})`)
     );
@@ -351,7 +409,7 @@ app.post("/api/recommendations/graph/:userId", async (req, res) => {
     res.json({
       recommendations: weightedMovies.slice(0, 5),
       usedKeywords: quizKeywords,
-      totalFound: weightedMovies.length
+      totalFound: weightedMovies.length,
     });
   } catch (err) {
     console.error("❌ Erro (graph):", err);
@@ -419,6 +477,66 @@ app.post("/users/:id/quiz", async (req, res) => {
     res.status(500).json({ error: "Erro ao salvar quiz", details: err.message });
   }
 });
+
+// 🔹 Rota para listar todos os gêneros existentes no banco
+app.get("/api/movies/genres", async (req, res) => {
+  try {
+    const genres = await Movie.distinct("genres"); // busca todos os gêneros únicos
+    res.json({ genres: genres.sort() }); // retorna ordenado
+  } catch (err) {
+    console.error("❌ Erro ao buscar gêneros:", err);
+    res.status(500).json({ error: "Erro ao buscar gêneros" });
+  }
+});
+
+app.get("/api/movies/filter", async (req, res) => {
+  try {
+    const { genre, q, type, year, maxAge } = req.query;
+    const query = {};
+
+    // 🔎 Busca por título, palavra-chave ou gênero
+    if (q) {
+      query.$or = [
+        { title: { $regex: q, $options: "i" } },
+        { "keywords.name": { $regex: q, $options: "i" } },
+        { "genres.name": { $regex: q, $options: "i" } },
+      ];
+    }
+
+    // 🎭 Filtro por gênero
+    if (genre) query["genres.name"] = { $regex: genre, $options: "i" };
+
+    // 🎬 Tipo (movie / tv)
+    if (type) query["tmdbData.media_type"] = type;
+
+    // 📅 Filtro por ano
+    if (year) {
+      query.$or = [
+        { "tmdbData.release_date": { $regex: year, $options: "i" } },
+        { "tmdbData.first_air_date": { $regex: year, $options: "i" } },
+      ];
+    }
+
+    // 👶 Filtrar por faixa etária (se houver campo minAge / maxAge)
+    if (maxAge) {
+      const age = Number(maxAge);
+      query.$and = [
+        { $or: [{ minAge: null }, { minAge: { $lte: age } }] },
+        { $or: [{ maxAge: null }, { maxAge: { $gte: age } }] },
+      ];
+    }
+
+    // 🔹 Busca no MongoDB
+    const movies = await Movie.find(query).limit(100);
+
+    res.json({ movies });
+  } catch (err) {
+    console.error("❌ Erro ao buscar filmes:", err);
+    res.status(500).json({ error: "Erro ao buscar filmes" });
+  }
+});
+
+app.use("/api/movies", movieRoutes);
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,

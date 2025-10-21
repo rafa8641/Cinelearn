@@ -2,20 +2,51 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import MovieCard from "../components/MovieCard";
-import { fetchMovies } from "../services/moviesService";
+import { fetchMoviesWithFilters, fetchGenres } from "../services/moviesService";
+import NavbarStudent from "../components/NavbarStudent";
 import "../styles/StudentHome.css";
 
 export default function StudentHome() {
   const { user, token } = useUser();
   const location = useLocation();
+  const [searchResults, setSearchResults] = useState([]);
 
   const [movies, setMovies] = useState([]);
+  const [genres, setGenres] = useState([]); // 🎭 gêneros dinâmicos
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Lê ?q= da URL
-  const searchQuery = new URLSearchParams(location.search).get("q") || "";
+  // 🎛️ Filtros
+  const [filters, setFilters] = useState({
+    genre: "",
+    type: "",
+    year: "",
+  });
 
+ // 🔎 Busca reativa: atualiza sempre que o ?q= mudar
+  const [searchQuery, setSearchQuery] = useState(
+    new URLSearchParams(location.search).get("q") || ""
+  );
+
+  useEffect(() => {
+    const q = new URLSearchParams(location.search).get("q") || "";
+    setSearchQuery(q);
+  }, [location.search]);
+
+  // 🔹 Buscar lista de gêneros do backend
+  useEffect(() => {
+    async function loadGenres() {
+      try {
+        const data = await fetchGenres();
+        setGenres(data);
+      } catch (err) {
+        console.error("Erro ao buscar gêneros:", err);
+      }
+    }
+    loadGenres();
+  }, []);
+
+  // 🔹 Buscar filmes com filtros
   useEffect(() => {
     if (!user) return;
     const controller = new AbortController();
@@ -23,18 +54,22 @@ export default function StudentHome() {
     async function load() {
       setLoading(true);
       setError("");
+
       try {
-        const data = await fetchMovies({
-          maxAge: user.age,           // se quiser filtrar por idade
-          q: searchQuery || undefined,
-          token,
-          signal: controller.signal,
-        });
+        const params = {
+          genre: filters.genre || "",
+          type: filters.type || "",
+          year: filters.year || "",
+          maxAge: user?.age || "",
+          q: searchQuery || "",
+        };
+
+        const data = await fetchMoviesWithFilters(params);
         setMovies(data.movies || []);
       } catch (err) {
         if (err.name !== "AbortError") {
           console.error(err);
-          setError(err.message || "Erro ao carregar filmes");
+          setError("Erro ao carregar filmes");
         }
       } finally {
         setLoading(false);
@@ -43,13 +78,51 @@ export default function StudentHome() {
 
     load();
     return () => controller.abort();
-  }, [user, token, searchQuery]);
+  }, [user, token, filters, searchQuery]);
 
   return (
     <div className="student-home">
       <div className="student-content">
-        <h2 className="student-title">Recomendações para você 🎥</h2>
+        <h2 className="student-title">Catálogo Educacional</h2>
 
+        {/* 🎛️ Filtros */}
+        <div className="filters">
+          {/* Gênero (agora dinâmico) */}
+          <select
+            value={filters.genre}
+            onChange={(e) => setFilters({ ...filters, genre: e.target.value })}
+          >
+            <option value="">Todos os Gêneros</option>
+            {genres.map((genreObj, index) => {
+              const name = genreObj.name || genreObj; // se vier string, usa direto
+              return (
+                <option key={genreObj.id || index} value={name}>
+                  {name}
+                </option>
+              );
+            })}
+          </select>
+
+          {/* Tipo (Filme/Série) */}
+          <select
+            value={filters.type}
+            onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+          >
+            <option value="">Todos os Tipos</option>
+            <option value="movie">Filme</option>
+            <option value="tv">Série</option>
+          </select>
+
+          {/* Ano */}
+          <input
+            type="number"
+            placeholder="Ano (ex: 2020)"
+            value={filters.year}
+            onChange={(e) => setFilters({ ...filters, year: e.target.value })}
+          />
+        </div>
+
+        {/* Resultado */}
         {loading && <p>Carregando filmes...</p>}
         {error && <p style={{ color: "salmon" }}>{error}</p>}
         {!loading && !error && movies.length === 0 && (

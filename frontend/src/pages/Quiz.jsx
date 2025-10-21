@@ -17,24 +17,26 @@ export default function Quiz() {
   };
 
   const handleSubmit = async () => {
-    if (!user?._id) {
-      alert("Usuário não identificado!");
-      return;
-    }
+  if (!user?._id) {
+    alert("Usuário não identificado!");
+    return;
+  }
 
-    // verifica se todas foram respondidas
-    const unanswered = quizConfig.filter((q) => !answers[q.id]);
-    if (unanswered.length > 0) {
-      alert("Por favor, responda todas as perguntas antes de continuar.");
-      return;
-    }
+  // Só valida as perguntas visíveis para o tipo do usuário
+  const unanswered = visibleQuestions.filter((q) => !answers[q.id]);
+  if (unanswered.length > 0) {
+    alert("Por favor, responda todas as perguntas antes de continuar.");
+    return;
+  }
 
     try {
       setError("");
       setShowResults(false);
 
-      // junta todas as respostas em um array de palavras-chave
-      const selectedKeywords = Object.values(answers);
+      // Junta todas as respostas (algumas são arrays de keywords, outras são strings)
+      const selectedKeywords = Object.values(answers).flatMap(a =>
+        a.keywords ? a.keywords : [a]
+      );
 
       // 🔹 1. Salva no backend e recebe o quiz populado
       const saveRes = await fetch(`http://localhost:5000/users/${user._id}/quiz`, {
@@ -63,28 +65,40 @@ export default function Quiz() {
     }
   };
 
+    // Filtra apenas as perguntas visíveis de acordo com o tipo de usuário
+    const visibleQuestions = quizConfig.filter((q) => {
+      if (!q.visibleFor) return true;
+      const role = (user?.role || user?.type || "").toLowerCase();
+      return q.visibleFor.includes(role);
+    });
+
   return (
     <div className="quiz-page">
-      <h2>🎬 Quiz Educacional</h2>
+      <h2>Quiz Educacional</h2>
 
       {error && <p style={{ color: "salmon" }}>{error}</p>}
 
       {/* perguntas */}
       <div className="quiz-questions">
-        {quizConfig.map((q) => (
-          <div key={q.id} className="quiz-question">
-            <h3>{q.question}</h3>
-            {q.options.map((opt) => (
-              <button
-                key={opt.id}
-                onClick={() => handleSelect(q.id, opt.label)} // <-- usamos label aqui
-                className={answers[q.id] === opt.label ? "selected" : ""}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        ))}
+        {visibleQuestions.map((q) => (
+            <div key={q.id} className="quiz-question">
+              <h3>{q.question}</h3>
+              {q.options.map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() =>
+                    handleSelect(q.id, {
+                      id: opt.id,
+                      keywords: opt.keywords || [opt.label],
+                    })
+                  }
+                  className={answers[q.id]?.id === opt.id ? "selected" : ""}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          ))}
       </div>
 
       <button onClick={handleSubmit} className="submit-btn">

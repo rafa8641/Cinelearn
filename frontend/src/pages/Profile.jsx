@@ -6,13 +6,13 @@ import "../styles/Profile.css";
 export default function Profile() {
   const { user, updateUser } = useUser();
   const [editing, setEditing] = useState(false);
-  const [showAll, setShowAll] = useState(false); // 👈 controla ver mais/ver menos
+  const [showAll, setShowAll] = useState(false);
 
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
     age: user?.age || "",
-    accountType: user?.accountType || "Aluno",
+    role: user?.role || "aluno", // ✅ agora usa o campo certo do banco
   });
 
   if (!user) {
@@ -27,10 +27,24 @@ export default function Profile() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSave = () => {
-    updateUser(formData);
-    setEditing(false);
-    alert("Perfil atualizado com sucesso!");
+  const handleSave = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/users/${user._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) throw new Error("Erro ao salvar alterações");
+      const updatedUser = await res.json();
+
+      updateUser(updatedUser);
+      setEditing(false);
+      alert("Perfil atualizado com sucesso!");
+    } catch (err) {
+      console.error("Erro ao salvar perfil:", err);
+      alert("Erro ao atualizar perfil.");
+    }
   };
 
   const handleCancel = () => {
@@ -38,15 +52,13 @@ export default function Profile() {
       name: user.name || "",
       email: user.email || "",
       age: user.age || "",
-      accountType: user.accountType || "Aluno",
+      role: user.role || "aluno",
     });
     setEditing(false);
   };
 
   const favorites = user?.favorites || [];
   const quizResults = user?.quizResults || [];
-
-  // 🔹 mostra os 5 mais recentes por padrão
   const displayedQuizzes = showAll ? quizResults : quizResults.slice(-5);
 
   return (
@@ -75,6 +87,7 @@ export default function Profile() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
+                    readOnly
                   />
                 </label>
 
@@ -92,12 +105,12 @@ export default function Profile() {
                 <label>
                   Tipo de Conta:
                   <select
-                    name="accountType"
-                    value={formData.accountType}
+                    name="role"
+                    value={formData.role}
                     onChange={handleChange}
                   >
-                    <option value="Aluno">Aluno</option>
-                    <option value="Professor">Professor</option>
+                    <option value="aluno">Aluno/Filho</option>
+                    <option value="professor">Professor/Pais</option>
                   </select>
                 </label>
 
@@ -115,7 +128,10 @@ export default function Profile() {
                 <p><strong>Nome:</strong> {user.name || "Usuário"}</p>
                 <p><strong>Email:</strong> {user.email || "email@exemplo.com"}</p>
                 <p><strong>Idade:</strong> {user.age || "Não informada"}</p>
-                <p><strong>Tipo de conta:</strong> {user.accountType || "Aluno"}</p>
+                <p>
+                  <strong>Tipo de conta:</strong>{" "}
+                  {user.role === "professor" ? "Professor/Pais" : "Aluno/Filho"}
+                </p>
                 <button className="edit-btn" onClick={() => setEditing(true)}>
                   Editar Perfil
                 </button>
@@ -181,27 +197,29 @@ export default function Profile() {
                     {quiz.answers?.join(", ") || "Nenhuma palavra-chave"}
                   </p>
 
-                  {/* 🎥 Filmes recomendados */}
-                    {quiz.recommendations?.length > 0 && (
-                      <div className="quiz-recommendations">
-                        <h4>🎬 Filmes Recomendados</h4>
-                        <div className="quiz-movie-grid">
-                          {quiz.recommendations.map((movie) => (
-                            <Link key={movie._id} to={`/movie/${movie._id}`} className="quiz-movie-card">
-                              <img
-                                src={`https://image.tmdb.org/t/p/w200${movie.tmdbData?.poster_path}`}
-                                alt={movie.title}
-                              />
-                              <p>{movie.title}</p>
-                            </Link>
-                          ))}
-                        </div>
+                  {quiz.recommendations?.length > 0 && (
+                    <div className="quiz-recommendations">
+                      <h4>🎬 Filmes Recomendados</h4>
+                      <div className="quiz-movie-grid">
+                        {quiz.recommendations.map((movie) => (
+                          <Link
+                            key={movie._id}
+                            to={`/movie/${movie._id}`}
+                            className="quiz-movie-card"
+                          >
+                            <img
+                              src={`https://image.tmdb.org/t/p/w200${movie.tmdbData?.poster_path}`}
+                              alt={movie.title}
+                            />
+                            <p>{movie.title}</p>
+                          </Link>
+                        ))}
                       </div>
+                    </div>
                   )}
                 </div>
               ))}
 
-            {/* ⬇️ Botão ver mais / menos */}
             {quizResults.length > 5 && (
               <div className="show-more-container">
                 <button

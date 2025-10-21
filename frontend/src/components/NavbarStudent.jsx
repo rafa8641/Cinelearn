@@ -9,39 +9,47 @@ export default function NavbarStudent() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Esconde a barra de busca nas páginas
-const hideSearch =
-  location.pathname.startsWith("/movie/") ||
-  location.pathname.startsWith("/profile") ||
-  location.pathname.startsWith("/quiz");
+  // 🔹 Detecta se deve esconder o campo de busca
+  const hideSearch =
+    location.pathname.startsWith("/movie/") ||
+    location.pathname.startsWith("/profile") ||
+    location.pathname.startsWith("/quiz") ||
+    location.pathname.startsWith("/favorites");
 
-  // Busca sincronizada com ?q=
+  // 🔹 Controla o valor do campo de busca
   const [value, setValue] = useState(
     new URLSearchParams(location.search).get("q") || ""
   );
 
-  // Atualiza input ao mudar de página
+  // Atualiza o input ao mudar de página
   useEffect(() => {
     const q = new URLSearchParams(location.search).get("q") || "";
     setValue(q);
   }, [location.search]);
 
-  // Atualiza a URL (debounce)
+  // 🔎 Atualiza a URL e ativa a busca (com debounce)
   useEffect(() => {
     if (hideSearch) return;
-    if (!location.pathname.startsWith("/student-home")) return;
+
+    // Aplica busca apenas na página de home (student ou teacher)
+    const isHomePage =
+      location.pathname.startsWith("/student-home") ||
+      location.pathname.startsWith("/teacher-home");
+
+    if (!isHomePage) return;
 
     const t = setTimeout(() => {
       const params = new URLSearchParams(location.search);
       if (value) params.set("q", value);
       else params.delete("q");
 
-      navigate(`/student-home?${params.toString()}`, { replace: true });
-    }, 300);
+      navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+    }, 400);
 
     return () => clearTimeout(t);
   }, [value, hideSearch, location.pathname, location.search, navigate]);
 
+  // 🔒 Logout
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -50,7 +58,10 @@ const hideSearch =
   return (
     <nav className="navbar-student">
       <div className="navbar-left">
-        <Link to="/student-home" className="navbar-logo">
+        <Link
+          to={user?.role === "professor" ? "/teacher-home" : "/student-home"}
+          className="navbar-logo"
+        >
           <img src={logo} alt="CineLearn" />
         </Link>
 

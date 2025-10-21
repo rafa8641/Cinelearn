@@ -2,7 +2,6 @@ import { useState } from "react";
 import { registerUser } from "../services/authService";
 import { Link } from "react-router-dom";
 import "../styles/Register.css";
-import logo from "../assets/logo.svg";
 
 export default function Register() {
   const [userData, setUserData] = useState({
@@ -71,7 +70,6 @@ export default function Register() {
           >
             <option value="aluno">Aluno</option>
             <option value="professor">Professor</option>
-            <option value="pai">Pai</option>
           </select>
 
           <input

@@ -61,5 +61,27 @@ export const quizConfig = [
       { id: "time_travel", label: "Viagem no tempo/entre lugares", keywords: ["time travel","historical setting","field trip","museum"] },
       { id: "challenge", label: "Desafio/Competição educativa", keywords: ["quiz","tournament","challenge","contest"] }
     ]
+  },
+  {
+    id: "contentType",
+    question: "Você deseja recomendações de:",
+    options: [
+      { id: "movie", label: "Filmes" },
+      { id: "tv", label: "Séries" },
+      { id: "both", label: "Ambos" },
+    ],
+  },
+  {
+    id: "ageRating",
+    question: "Qual classificação indicativa deseja considerar (idade mínima)?",
+    options: [
+      { id: "0", label: "Livre para todos os públicos" },
+      { id: "10", label: "A partir de 10 anos" },
+      { id: "12", label: "A partir de 12 anos" },
+      { id: "14", label: "A partir de 14 anos" },
+      { id: "16", label: "A partir de 16 anos" },
+      { id: "18", label: "A partir de 18 anos" },
+    ],
+    visibleFor: ["professor"],
   }
 ];

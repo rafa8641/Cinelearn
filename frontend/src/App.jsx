@@ -19,7 +19,8 @@ export default function App() {
     location.pathname.startsWith("/student-home") ||
     location.pathname.startsWith("/movie/") ||
     location.pathname.startsWith("/profile")||
-    location.pathname.startsWith("/quiz");
+    location.pathname.startsWith("/quiz")||
+    location.pathname.startsWith("/teacher-home");
 
   return (
     <>
