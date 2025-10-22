@@ -67,13 +67,32 @@ async function updateMovieAges() {
       const certification = await getCertification(type, tmdbId);
       const rating = certification || "L";
 
-      // ❌ Remove se for classificação adulta
-      if (blockedRatings.includes(rating.toUpperCase())) {
+      // 🚫 Lista de palavras que indicam conteúdo pornográfico/erótico
+      const bannedWords = [
+        "porn", "porno", "pornography", "adult", "sex", "sexual", "erotic",
+        "hentai", "fetish", "explicit", "xxx", "strip", "escort", "nude",
+        "naked", "orgy", "lesbian", "gay porn", "anal", "blowjob",
+        "masturbation", "brothel", "whore", "incest"
+      ];
+
+      // 🧠 Verifica se o conteúdo tem termos explícitos no título, sinopse ou gêneros
+      const text = `${movie.title || ""} ${movie.tmdbData?.overview || ""} ${(movie.genres || [])
+        .map(g => g.name || "").join(" ")}`.toLowerCase();
+
+      const containsBanned = bannedWords.some(word => text.includes(word));
+
+      // ⚙️ Regras de limpeza:
+      // - Se for +18 e contiver palavras explícitas → remove.
+      // - Se for +18 mas NÃO contiver → mantém.
+      // - Se tiver uma classificação bloqueada (ex: NC-17, AO, etc) → remove sempre.
+      if (
+        blockedRatings.includes(rating.toUpperCase()) ||
+        (rating === "18" && containsBanned)
+      ) {
         await Movie.deleteOne({ _id: movie._id });
         console.log(`🗑️ Removido: ${movie.title} (${rating})`);
         continue;
       }
-
       const ageRange = ratingMap[rating] || { minAge: 0, maxAge: 99 };
 
       movie.rating = rating;

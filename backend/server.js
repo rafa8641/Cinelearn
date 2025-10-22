@@ -4,13 +4,9 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 import Movie from "./models/Movie.js";
 import Users from "./models/Users.js";
-import Recommendation from "./models/Recommendation.js";
-import recommendationRoutes from "./routes/recommendationRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import movieRoutes from "./routes/movieRoutes.js";
 import cors from "cors";
-import path from "path";
-import uploadRoutes from "./routes/uploadRoutes.js";
 
 dotenv.config();
 
@@ -19,10 +15,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api", recommendationRoutes);
 app.use("/api/users", userRoutes);
-app.use("/uploads", express.static(path.resolve("uploads")));
-app.use("/api/upload", uploadRoutes);
 
 app.get("/ping", (req, res) => {
   res.json({ message: "API está funcionando 🚀" });
@@ -242,11 +235,6 @@ app.post("/ratings", async (req, res) => {
   res.json({ message: "Avaliação salva" });
 });
 
-app.get("/recommendations/:userId", async (req, res) => {
-  const rec = await Recommendation.findOne({ userId: req.params.userId });
-  res.json(rec || { recommendations: [] });
-});
-
 // Adiciona um filme aos favoritos do usuário
 app.post("/users/:id/favorites", async (req, res) => {
   const { id } = req.params;
@@ -311,47 +299,6 @@ app.get("/users/:id/favorites", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao buscar favoritos", details: err.message });
-  }
-});
-
-// Recomendação baseada no quiz com peso do score
-app.get("/users/:id/recommendations", async (req, res) => {
-  try {
-    const user = await Users.findById(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
-    }
-
-    const lastQuiz = user.quizResults[user.quizResults.length - 1];
-    if (!lastQuiz || !lastQuiz.answers || lastQuiz.answers.length === 0) {
-      return res.status(400).json({ error: "Nenhum quiz disponível para recomendações" });
-    }
-
-    const userAge = user.preferences?.minAge || 0;
-
-    const score = lastQuiz.score || 1;
-
-    // Peso simples: repete as respostas de acordo com o score
-    const weightedKeywords = [];
-    lastQuiz.answers.forEach(ans => {
-      for (let i = 0; i < score; i++) {
-        weightedKeywords.push(ans.toLowerCase());
-      }
-    });
-
-    // Busca filmes que contenham ao menos uma keyword
-    const movies = await Movie.find({
-      $and: [
-        { "keywords.name": { $in: weightedKeywords } },
-        { $or: [{ minAge: null }, { minAge: { $lte: userAge } }] },
-        { $or: [{ maxAge: null }, { maxAge: { $gte: userAge } }] }
-      ]
-    }).limit(5);
-
-    res.json({ recommendations: movies, usedKeywords: weightedKeywords });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao buscar recomendações", details: err.message });
   }
 });
 
