@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import MovieCard from "../components/MovieCard";
 import { fetchMoviesWithFilters, fetchGenres } from "../services/moviesService";
-import NavbarStudent from "../components/NavbarStudent";
 import "../styles/StudentHome.css";
 
 export default function StudentHome() {
@@ -12,7 +11,7 @@ export default function StudentHome() {
   const [searchResults, setSearchResults] = useState([]);
 
   const [movies, setMovies] = useState([]);
-  const [genres, setGenres] = useState([]); // 🎭 gêneros dinâmicos
+  const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 

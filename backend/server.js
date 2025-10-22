@@ -99,7 +99,7 @@ app.get("/api/movies/filter", async (req, res) => {
     }
 
     // 🔹 Busca no MongoDB
-    const movies = await Movie.find(query).limit(100);
+    const movies = await Movie.find(query).limit(10000);
 
     res.json({ movies });
   } catch (err) {
