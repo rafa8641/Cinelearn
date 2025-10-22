@@ -17,6 +17,7 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", recommendationRoutes);
 app.use("/api/users", userRoutes);
@@ -25,6 +26,93 @@ app.use("/api/upload", uploadRoutes);
 
 app.get("/ping", (req, res) => {
   res.json({ message: "API está funcionando 🚀" });
+});
+
+app.get("/api/movies/filter", async (req, res) => {
+  try {
+    const { genre, q, type, year, maxAge, minAge } = req.query;
+    const query = {};
+
+    // 🔎 Busca por título, palavra-chave ou gênero
+    if (q) {
+      query.$or = [
+        { title: { $regex: q, $options: "i" } },
+        { "keywords.name": { $regex: q, $options: "i" } },
+        { "genres.name": { $regex: q, $options: "i" } },
+      ];
+    }
+
+    // 🎭 Filtro por gênero
+    if (genre) query["genres.name"] = { $regex: genre, $options: "i" };
+
+    // 🎬 Tipo (movie / tv)
+    if (type) query["tmdbData.media_type"] = type;
+
+    // 📅 Filtro por ano
+    if (year) {
+      query.$or = [
+        { "tmdbData.release_date": { $regex: year, $options: "i" } },
+        { "tmdbData.first_air_date": { $regex: year, $options: "i" } },
+      ];
+    }
+
+    // 🧒 Filtro por faixa etária
+    let userAge = null;
+    if (maxAge) userAge = parseInt(maxAge, 10);
+    else if (minAge) userAge = parseInt(minAge, 10);
+
+    const isTeacher = Boolean(minAge);
+
+    if (userAge && !isNaN(userAge)) {
+      if (isTeacher) {
+        // 👩‍🏫 Professor → quer filmes adequados para essa idade ou maiores
+        query.$and = [
+          {
+            $or: [
+              { minAge: null },
+              { minAge: { $gte: userAge } },
+              { minAge: { $exists: false } },
+            ],
+          },
+          {
+            $or: [
+              { maxAge: null },
+              { maxAge: { $gte: userAge } },
+              { maxAge: { $exists: false } },
+            ],
+          },
+        ];
+      } else {
+        // 👦 Aluno → só filmes até sua idade
+        query.$and = [
+          {
+            $or: [
+              { minAge: null },
+              { minAge: { $lte: userAge } },
+              { minAge: { $exists: false } },
+            ],
+          },
+          {
+            $or: [
+              { maxAge: null },
+              { maxAge: { $gte: userAge } }, // 🔒 restringe até a idade do aluno
+              { maxAge: { $exists: false } },
+            ],
+          },
+        ];
+      }
+    } else {
+      console.log("⚠️ Nenhuma idade válida recebida — sem filtro etário aplicado.");
+    }
+
+    // 🔹 Busca no MongoDB
+    const movies = await Movie.find(query).limit(100);
+
+    res.json({ movies });
+  } catch (err) {
+    console.error("❌ Erro ao buscar filmes:", err);
+    res.status(500).json({ error: "Erro ao buscar filmes" });
+  }
 });
 
 // Listar todos os filmes
@@ -293,17 +381,26 @@ app.post("/api/recommendations/graph/:userId", async (req, res) => {
     if (quizKeywords.includes("filmes")) selectedType = "movie";
     else if (quizKeywords.includes("séries") || quizKeywords.includes("series")) selectedType = "tv";
 
-    // 🔹 Detecta idade mínima (ex: “a partir de 12 anos”)
-    let selectedAge = 0;
+    // 🔹 Detecta idade escolhida no quiz (apenas professores têm essa pergunta)
+    let quizSelectedAge = 0;
     const ageAnswer = quizKeywords.find(a => a.includes("anos"));
     if (ageAnswer) {
       const m = ageAnswer.match(/\d+/);
-      if (m) selectedAge = parseInt(m[0], 10);
+      if (m) quizSelectedAge = parseInt(m[0], 10);
     }
+
+    // 🔹 Define a idade efetiva de filtragem:
+    // Professores → idade do quiz; Alunos → idade do perfil
+    const role = (user.role || "").toLowerCase();
+    const effectiveAge =
+      role === "professor"
+        ? quizSelectedAge || 0
+        : Number(user.age) || 0;
 
     console.log("🔎 Keywords do quiz:", quizKeywords);
     console.log("🎞️ Tipo selecionado:", selectedType);
-    console.log("🧒 Faixa etária mínima:", selectedAge);
+    console.log("👩‍🏫 Tipo de usuário:", role);
+    console.log("🧮 Idade usada para filtragem:", effectiveAge);
 
     // 1️⃣ FILTRO DE TIPO (movie / tv / both)
     const typeFilter =
@@ -320,21 +417,21 @@ app.post("/api/recommendations/graph/:userId", async (req, res) => {
 
     // 2️⃣ FILTRO DE IDADE
     const ageFilter =
-      selectedAge > 0
+      effectiveAge > 0
         ? {
             $and: [
               // pega filmes SEM faixa etária OU com faixa compatível
               {
                 $or: [
                   { minAge: null },
-                  { minAge: { $lte: selectedAge } },
+                  { minAge: { $lte: effectiveAge } },
                   { minAge: { $exists: false } },
                 ],
               },
               {
                 $or: [
                   { maxAge: null },
-                  { maxAge: { $gte: selectedAge } },
+                  { maxAge: { $gte: effectiveAge } },
                   { maxAge: { $exists: false } },
                 ],
               },
@@ -389,8 +486,8 @@ app.post("/api/recommendations/graph/:userId", async (req, res) => {
       score += Math.random() * 3;
 
       // (D) bônus se idade for compatível
-      if (selectedAge > 0 && movie.minAge && movie.maxAge) {
-        if (selectedAge >= movie.minAge && selectedAge <= movie.maxAge) {
+      if (effectiveAge > 0 && movie.minAge && movie.maxAge) {
+        if (effectiveAge >= movie.minAge && effectiveAge <= movie.maxAge) {
           score += 10;
         }
       }
@@ -486,53 +583,6 @@ app.get("/api/movies/genres", async (req, res) => {
   } catch (err) {
     console.error("❌ Erro ao buscar gêneros:", err);
     res.status(500).json({ error: "Erro ao buscar gêneros" });
-  }
-});
-
-app.get("/api/movies/filter", async (req, res) => {
-  try {
-    const { genre, q, type, year, maxAge } = req.query;
-    const query = {};
-
-    // 🔎 Busca por título, palavra-chave ou gênero
-    if (q) {
-      query.$or = [
-        { title: { $regex: q, $options: "i" } },
-        { "keywords.name": { $regex: q, $options: "i" } },
-        { "genres.name": { $regex: q, $options: "i" } },
-      ];
-    }
-
-    // 🎭 Filtro por gênero
-    if (genre) query["genres.name"] = { $regex: genre, $options: "i" };
-
-    // 🎬 Tipo (movie / tv)
-    if (type) query["tmdbData.media_type"] = type;
-
-    // 📅 Filtro por ano
-    if (year) {
-      query.$or = [
-        { "tmdbData.release_date": { $regex: year, $options: "i" } },
-        { "tmdbData.first_air_date": { $regex: year, $options: "i" } },
-      ];
-    }
-
-    // 👶 Filtrar por faixa etária (se houver campo minAge / maxAge)
-    if (maxAge) {
-      const age = Number(maxAge);
-      query.$and = [
-        { $or: [{ minAge: null }, { minAge: { $lte: age } }] },
-        { $or: [{ maxAge: null }, { maxAge: { $gte: age } }] },
-      ];
-    }
-
-    // 🔹 Busca no MongoDB
-    const movies = await Movie.find(query).limit(100);
-
-    res.json({ movies });
-  } catch (err) {
-    console.error("❌ Erro ao buscar filmes:", err);
-    res.status(500).json({ error: "Erro ao buscar filmes" });
   }
 });
 

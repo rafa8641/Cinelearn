@@ -10,7 +10,7 @@ export default function TeacherHome() {
   const location = useLocation();
 
   const [movies, setMovies] = useState([]);
-  const [genres, setGenres] = useState([]); // 🎭 gêneros dinâmicos
+  const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,9 +19,10 @@ export default function TeacherHome() {
     genre: "",
     type: "",
     year: "",
+    ageRating: "", // 🆕 novo filtro
   });
 
-  // Lê ?q= da URL (mantém sua busca normal)
+  // Lê ?q= da URL (mantém busca padrão)
   const searchQuery = new URLSearchParams(location.search).get("q") || "";
 
   // 🔹 Buscar lista de gêneros do backend
@@ -51,7 +52,7 @@ export default function TeacherHome() {
           genre: filters.genre || "",
           type: filters.type || "",
           year: filters.year || "",
-          maxAge: user?.age || "",
+          minAge: filters.ageRating || "", // 🆕 filtro de classificação
           q: searchQuery || "",
         };
 
@@ -78,14 +79,14 @@ export default function TeacherHome() {
 
         {/* 🎛️ Filtros */}
         <div className="filters">
-          {/* Gênero (agora dinâmico) */}
+          {/* Gênero (dinâmico) */}
           <select
             value={filters.genre}
             onChange={(e) => setFilters({ ...filters, genre: e.target.value })}
           >
             <option value="">Todos os Gêneros</option>
             {genres.map((genreObj, index) => {
-              const name = genreObj.name || genreObj; // se vier string, usa direto
+              const name = genreObj.name || genreObj;
               return (
                 <option key={genreObj.id || index} value={name}>
                   {name}
@@ -111,6 +112,22 @@ export default function TeacherHome() {
             value={filters.year}
             onChange={(e) => setFilters({ ...filters, year: e.target.value })}
           />
+
+          {/* 🆕 Classificação Indicativa */}
+          <select
+            value={filters.ageRating}
+            onChange={(e) =>
+              setFilters({ ...filters, ageRating: e.target.value })
+            }
+          >
+            <option value="">Todas as Classificações</option>
+            <option value="0">Livre</option>
+            <option value="10">A partir de 10 anos</option>
+            <option value="12">A partir de 12 anos</option>
+            <option value="14">A partir de 14 anos</option>
+            <option value="16">A partir de 16 anos</option>
+            <option value="18">A partir de 18 anos</option>
+          </select>
         </div>
 
         {/* Resultado */}

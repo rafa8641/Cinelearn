@@ -47,38 +47,51 @@ export default function StudentHome() {
   }, []);
 
   // 🔹 Buscar filmes com filtros
-  useEffect(() => {
-    if (!user) return;
-    const controller = new AbortController();
+ useEffect(() => {
+  // ⚠️ Só busca filmes se o usuário e a idade existirem
+  if (!user || !user.age) {
+    console.warn("⏳ Aguardando dados do usuário antes de carregar filmes...");
+    return;
+  }
 
-    async function load() {
-      setLoading(true);
-      setError("");
+  const controller = new AbortController();
 
-      try {
-        const params = {
-          genre: filters.genre || "",
-          type: filters.type || "",
-          year: filters.year || "",
-          maxAge: user?.age || "",
-          q: searchQuery || "",
-        };
+  async function load() {
+    setLoading(true);
+    setError("");
 
-        const data = await fetchMoviesWithFilters(params);
-        setMovies(data.movies || []);
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error(err);
-          setError("Erro ao carregar filmes");
-        }
-      } finally {
-        setLoading(false);
+    try {
+      const params = {
+        genre: filters.genre || "",
+        type: filters.type || "",
+        year: filters.year || "",
+        q: searchQuery || "",
+      };
+
+      // ✅ Define corretamente o tipo de idade
+      if (user.role?.toLowerCase() === "professor") {
+        params.minAge = user.age;
+      } else {
+        params.maxAge = user.age;
       }
-    }
 
-    load();
-    return () => controller.abort();
-  }, [user, token, filters, searchQuery]);
+      console.log("🎒 Enviando filtros (corrigido):", params);
+
+      const data = await fetchMoviesWithFilters(params);
+      setMovies(data.movies || []);
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        console.error(err);
+        setError("Erro ao carregar filmes");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  load();
+  return () => controller.abort();
+}, [user, token, filters, searchQuery]);
 
   return (
     <div className="student-home">

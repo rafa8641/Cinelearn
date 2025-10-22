@@ -76,11 +76,25 @@ export async function fetchGraphRecommendations(userId) {
   }
 }
 
-export async function fetchMoviesWithFilters(filters) {
+export async function fetchMoviesWithFilters(filters = {}) {
   try {
-    const params = new URLSearchParams(filters);
+    const params = new URLSearchParams();
+
+    if (filters.genre) params.append("genre", filters.genre);
+    if (filters.type) params.append("type", filters.type);
+    if (filters.year) params.append("year", filters.year);
+    if (filters.q) params.append("q", filters.q);
+
+    // 🧠 Corrigido: agora suporta ambos (aluno e professor)
+    if (filters.maxAge) params.append("maxAge", filters.maxAge);
+    if (filters.minAge) params.append("minAge", filters.minAge);
+    if (filters.ageRating) params.append("minAge", filters.ageRating);
+
+    console.log("🎬 Filtros enviados ao backend:", Object.fromEntries(params));
+
     const res = await fetch(`http://localhost:5000/api/movies/filter?${params.toString()}`);
-    if (!res.ok) throw new Error("Erro ao buscar filmes");
+
+    if (!res.ok) throw new Error("Erro ao buscar filmes com filtros");
 
     const data = await res.json();
     return Array.isArray(data.movies) ? data : { movies: [] };
