@@ -23,10 +23,10 @@ app.get("/ping", (req, res) => {
 
 app.get("/api/movies/filter", async (req, res) => {
   try {
-    const { genre, q, type, year, maxAge, minAge } = req.query;
+    const { genre, q, type, year, maxAge, minAge, cursor, limit: limitStr } = req.query;
     const query = {};
 
-    // 🔎 Busca por título, palavra-chave ou gênero
+    // 🔎 texto
     if (q) {
       query.$or = [
         { title: { $regex: q, $options: "i" } },
@@ -35,13 +35,13 @@ app.get("/api/movies/filter", async (req, res) => {
       ];
     }
 
-    // 🎭 Filtro por gênero
+    // 🎭 gênero
     if (genre) query["genres.name"] = { $regex: genre, $options: "i" };
 
-    // 🎬 Tipo (movie / tv)
+    // 🎬 tipo
     if (type) query["tmdbData.media_type"] = type;
 
-    // 📅 Filtro por ano
+    // 📅 ano
     if (year) {
       query.$or = [
         { "tmdbData.release_date": { $regex: year, $options: "i" } },
@@ -49,7 +49,7 @@ app.get("/api/movies/filter", async (req, res) => {
       ];
     }
 
-    // 🧒 Filtro por faixa etária
+    // 🧒 faixa etária
     let userAge = null;
     if (maxAge) userAge = parseInt(maxAge, 10);
     else if (minAge) userAge = parseInt(minAge, 10);
@@ -58,7 +58,7 @@ app.get("/api/movies/filter", async (req, res) => {
 
     if (userAge && !isNaN(userAge)) {
       if (isTeacher) {
-        // 👩‍🏫 Professor → quer filmes adequados para essa idade ou maiores
+        // professor → compatível com essa idade
         query.$and = [
           {
             $or: [
@@ -76,7 +76,7 @@ app.get("/api/movies/filter", async (req, res) => {
           },
         ];
       } else {
-        // 👦 Aluno → só filmes até sua idade
+        // aluno → até a idade do aluno
         query.$and = [
           {
             $or: [
@@ -88,20 +88,36 @@ app.get("/api/movies/filter", async (req, res) => {
           {
             $or: [
               { maxAge: null },
-              { maxAge: { $gte: userAge } }, // 🔒 restringe até a idade do aluno
+              { maxAge: { $gte: userAge } },
               { maxAge: { $exists: false } },
             ],
           },
         ];
       }
-    } else {
-      console.log("⚠️ Nenhuma idade válida recebida — sem filtro etário aplicado.");
     }
 
-    // 🔹 Busca no MongoDB
-    const movies = await Movie.find(query).limit(10000);
+    // 🔁 cursor por tmdbData.id (numérico)
+    const limit = Math.max(10, parseInt(limitStr || "48", 10));
+    const sort = { "tmdbData.id": -1, _id: 1 }; // ordena do maior id TMDB p/ menor
 
-    res.json({ movies });
+    const finalQuery = { ...query, "tmdbData.id": { $exists: true } };
+    if (cursor) {
+      const c = parseInt(cursor, 10);
+      if (!isNaN(c)) {
+        finalQuery["tmdbData.id"] = { ...finalQuery["tmdbData.id"], $lt: c };
+      }
+    }
+
+    const movies = await Movie.find(finalQuery).sort(sort).limit(limit).lean();
+
+    const nextCursor = movies.length ? movies[movies.length - 1]?.tmdbData?.id : null;
+    const hasMore = movies.length === limit;
+
+    res.json({
+      movies,
+      nextCursor,
+      hasMore,
+    });
   } catch (err) {
     console.error("❌ Erro ao buscar filmes:", err);
     res.status(500).json({ error: "Erro ao buscar filmes" });

@@ -12,20 +12,21 @@ export default function TeacherHome() {
   const [movies, setMovies] = useState([]);
   const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
 
-  // 🎛️ Filtros
   const [filters, setFilters] = useState({
     genre: "",
     type: "",
     year: "",
-    ageRating: "", // 🆕 novo filtro
+    ageRating: "",
   });
 
-  // Lê ?q= da URL (mantém busca padrão)
   const searchQuery = new URLSearchParams(location.search).get("q") || "";
 
-  // 🔹 Buscar lista de gêneros do backend
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+
   useEffect(() => {
     async function loadGenres() {
       try {
@@ -38,7 +39,6 @@ export default function TeacherHome() {
     loadGenres();
   }, []);
 
-  // 🔹 Buscar filmes com filtros
   useEffect(() => {
     if (!user) return;
     const controller = new AbortController();
@@ -52,12 +52,16 @@ export default function TeacherHome() {
           genre: filters.genre || "",
           type: filters.type || "",
           year: filters.year || "",
-          minAge: filters.ageRating || "", // 🆕 filtro de classificação
+          minAge: filters.ageRating || "",
           q: searchQuery || "",
+          limit: 48,
+          cursor: null,
         };
 
         const data = await fetchMoviesWithFilters(params);
         setMovies(data.movies || []);
+        setCursor(data.nextCursor || null);
+        setHasMore(Boolean(data.hasMore));
       } catch (err) {
         if (err.name !== "AbortError") {
           console.error(err);
@@ -68,9 +72,50 @@ export default function TeacherHome() {
       }
     }
 
+    setCursor(null);
+    setHasMore(true);
+    setMovies([]);
     load();
+
     return () => controller.abort();
   }, [user, token, filters, searchQuery]);
+
+  // scroll infinito
+  useEffect(() => {
+    const handleScroll = async () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop + 200 >=
+        document.documentElement.scrollHeight
+      ) {
+        if (!loadingMore && hasMore) {
+          setLoadingMore(true);
+          try {
+            const params = {
+              genre: filters.genre || "",
+              type: filters.type || "",
+              year: filters.year || "",
+              minAge: filters.ageRating || "",
+              q: searchQuery || "",
+              limit: 48,
+              cursor,
+            };
+
+            const data = await fetchMoviesWithFilters(params);
+            setMovies((prev) => [...prev, ...(data.movies || [])]);
+            setCursor(data.nextCursor || null);
+            setHasMore(Boolean(data.hasMore));
+          } catch (err) {
+            console.error(err);
+          } finally {
+            setLoadingMore(false);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [cursor, hasMore, loadingMore, filters, searchQuery]);
 
   return (
     <div className="student-home">
@@ -79,7 +124,6 @@ export default function TeacherHome() {
 
         {/* 🎛️ Filtros */}
         <div className="filters">
-          {/* Gênero (dinâmico) */}
           <select
             value={filters.genre}
             onChange={(e) => setFilters({ ...filters, genre: e.target.value })}
@@ -95,7 +139,6 @@ export default function TeacherHome() {
             })}
           </select>
 
-          {/* Tipo (Filme/Série) */}
           <select
             value={filters.type}
             onChange={(e) => setFilters({ ...filters, type: e.target.value })}
@@ -105,7 +148,6 @@ export default function TeacherHome() {
             <option value="tv">Série</option>
           </select>
 
-          {/* Ano */}
           <input
             type="number"
             placeholder="Ano (ex: 2020)"
@@ -113,7 +155,6 @@ export default function TeacherHome() {
             onChange={(e) => setFilters({ ...filters, year: e.target.value })}
           />
 
-          {/* 🆕 Classificação Indicativa */}
           <select
             value={filters.ageRating}
             onChange={(e) =>
@@ -130,7 +171,6 @@ export default function TeacherHome() {
           </select>
         </div>
 
-        {/* Resultado */}
         {loading && <p>Carregando filmes...</p>}
         {error && <p style={{ color: "salmon" }}>{error}</p>}
         {!loading && !error && movies.length === 0 && (
@@ -142,6 +182,8 @@ export default function TeacherHome() {
             <MovieCard key={movie._id || movie.id} movie={movie} />
           ))}
         </div>
+
+        {loadingMore && <p style={{ textAlign: "center" }}>Carregando mais...</p>}
       </div>
     </div>
   );

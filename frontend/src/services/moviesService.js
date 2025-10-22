@@ -87,21 +87,19 @@ export async function fetchMoviesWithFilters(filters = {}) {
     if (filters.minAge || filters.ageRating) params.append("minAge", filters.minAge || filters.ageRating);
     if (filters.maxAge) params.append("maxAge", filters.maxAge);
     if (filters.limit) params.append("limit", String(filters.limit));
-    if (filters.cursorId) params.append("cursorId", String(filters.cursorId));
+    if (filters.cursor) params.append("cursor", String(filters.cursor)); // << usa tmdbData.id
 
-    console.log("🎬 Filtros enviados ao backend (cursor):", Object.fromEntries(params));
+    console.log("🎬 Filtros enviados ao backend (cursor TMDB):", Object.fromEntries(params));
 
     const res = await fetch(`http://localhost:5000/api/movies/filter?${params.toString()}`);
-
     if (!res.ok) throw new Error("Erro ao buscar filmes com filtros");
 
-    const data = await res.json();
-    // data = { movies, nextCursorId, hasMore }
-    if (!Array.isArray(data.movies)) return { movies: [], nextCursorId: null, hasMore: false };
+    const data = await res.json(); // { movies, nextCursor, hasMore }
+    if (!Array.isArray(data.movies)) return { movies: [], nextCursor: null, hasMore: false };
     return data;
   } catch (err) {
     console.error("❌ Erro em fetchMoviesWithFilters:", err);
-    return { movies: [], nextCursorId: null, hasMore: false };
+    return { movies: [], nextCursor: null, hasMore: false };
   }
 }
 
