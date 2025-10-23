@@ -1,0 +1,11 @@
+# Ignorar arquivos de ambiente
+.env
+backend/.env
+frontend/.env
+
+# Node modules
+node_modules/
+
+# Build e cache
+dist/
+build/
