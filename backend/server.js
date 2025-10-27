@@ -158,6 +158,67 @@ app.get("/movies", async (req, res) => {
   }
 });
 
+// ✅ Salvar quiz e retornar filmes recomendados corretamente
+app.post("/api/users/:id/quiz", async (req, res) => {
+  try {
+    const { quizId, answers } = req.body;
+    const { id } = req.params;
+
+    const user = await Users.findById(id);
+    if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+
+    // 🔹 1. Buscar recomendações do grafo
+    const recResponse = await fetch(`https://cinelearn.onrender.com/api/recommendations/graph/${id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers }),
+    });
+    const recData = await recResponse.json();
+
+    // 🔹 2. Extrair IDs de string
+    const recommendedIds = (recData.recommendations || [])
+      .filter(r => r && r._id)
+      .map(r => r._id);
+
+    console.log("🎬 IDs de filmes recomendados:", recommendedIds);
+
+    // 🔹 3. Criar novo quiz com recomendações (strings)
+    const newQuiz = {
+      quizId: quizId || "educacional",
+      answers: answers || [],
+      recommendations: recommendedIds,
+      createdAt: new Date(),
+    };
+
+    // 🔹 4. Adicionar o quiz ao usuário
+    user.quizResults.push(newQuiz);
+    await user.save();
+
+    // 🔹 5. Buscar os filmes correspondentes
+    const fullMovies = await Movie.find({ _id: { $in: recommendedIds } })
+      .select("title tmdbData")
+      .lean();
+
+    console.log("📽️ Filmes encontrados:", fullMovies.length);
+
+    // 🔹 6. Atualizar a entrada do quiz com os filmes populados
+    const populatedQuiz = {
+      ...newQuiz,
+      recommendations: fullMovies,
+    };
+
+    // 🔹 7. Retornar o quiz populado
+    res.json({
+      message: "Quiz salvo com sucesso!",
+      quiz: populatedQuiz,
+    });
+
+  } catch (err) {
+    console.error("❌ Erro ao salvar quiz:", err);
+    res.status(500).json({ error: "Erro ao salvar quiz", details: err.message });
+  }
+});
+
 // Criar um novo usuário
 app.post("/users", async (req, res) => {
   try {
@@ -497,67 +558,6 @@ app.post("/api/recommendations/graph/:userId", async (req, res) => {
   } catch (err) {
     console.error("❌ Erro (graph):", err);
     res.status(500).json({ error: "Erro ao gerar recomendações", details: err.message });
-  }
-});
-
-// ✅ Salvar quiz e retornar filmes recomendados corretamente
-app.post("/api/users/:id/quiz", async (req, res) => {
-  try {
-    const { quizId, answers } = req.body;
-    const { id } = req.params;
-
-    const user = await Users.findById(id);
-    if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
-
-    // 🔹 1. Buscar recomendações do grafo
-    const recResponse = await fetch(`https://cinelearn.onrender.com/api/recommendations/graph/${id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answers }),
-    });
-    const recData = await recResponse.json();
-
-    // 🔹 2. Extrair IDs de string
-    const recommendedIds = (recData.recommendations || [])
-      .filter(r => r && r._id)
-      .map(r => r._id);
-
-    console.log("🎬 IDs de filmes recomendados:", recommendedIds);
-
-    // 🔹 3. Criar novo quiz com recomendações (strings)
-    const newQuiz = {
-      quizId: quizId || "educacional",
-      answers: answers || [],
-      recommendations: recommendedIds,
-      createdAt: new Date(),
-    };
-
-    // 🔹 4. Adicionar o quiz ao usuário
-    user.quizResults.push(newQuiz);
-    await user.save();
-
-    // 🔹 5. Buscar os filmes correspondentes
-    const fullMovies = await Movie.find({ _id: { $in: recommendedIds } })
-      .select("title tmdbData")
-      .lean();
-
-    console.log("📽️ Filmes encontrados:", fullMovies.length);
-
-    // 🔹 6. Atualizar a entrada do quiz com os filmes populados
-    const populatedQuiz = {
-      ...newQuiz,
-      recommendations: fullMovies,
-    };
-
-    // 🔹 7. Retornar o quiz populado
-    res.json({
-      message: "Quiz salvo com sucesso!",
-      quiz: populatedQuiz,
-    });
-
-  } catch (err) {
-    console.error("❌ Erro ao salvar quiz:", err);
-    res.status(500).json({ error: "Erro ao salvar quiz", details: err.message });
   }
 });
 
