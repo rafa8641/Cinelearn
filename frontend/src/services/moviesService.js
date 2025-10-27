@@ -60,7 +60,7 @@ export async function fetchMovieById(id, { token } = {}) {
 // 🔹 Buscar recomendações por grafo (quiz final)
 export async function fetchGraphRecommendations(userId) {
   try {
-    const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const BASE_URL = import.meta.env.VITE_API_URL || "https://cinelearn.onrender.com";
     const res = await fetch(`${BASE_URL}/api/recommendations/graph/${userId}`);
 
     if (!res.ok) {
@@ -91,7 +91,7 @@ export async function fetchMoviesWithFilters(filters = {}) {
 
     console.log("🎬 Filtros enviados ao backend (cursor TMDB):", Object.fromEntries(params));
 
-    const res = await fetch(`http://localhost:5000/api/movies/filter?${params.toString()}`);
+    const res = await fetch(`https://cinelearn.onrender.com/api/movies/filter?${params.toString()}`);
     if (!res.ok) throw new Error("Erro ao buscar filmes com filtros");
 
     const data = await res.json(); // { movies, nextCursor, hasMore }
@@ -105,7 +105,7 @@ export async function fetchMoviesWithFilters(filters = {}) {
 
 export async function fetchGenres() {
   try {
-    const res = await fetch("http://localhost:5000/api/movies/genres");
+    const res = await fetch("https://cinelearn.onrender.com/api/movies/genres");
     if (!res.ok) throw new Error("Erro ao buscar gêneros");
 
     const data = await res.json();
