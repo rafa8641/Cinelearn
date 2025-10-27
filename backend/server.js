@@ -499,7 +499,7 @@ app.post("/api/recommendations/graph/:userId", async (req, res) => {
 });
 
 // ✅ Salvar quiz e retornar filmes recomendados corretamente
-app.post("/users/:id/quiz", async (req, res) => {
+app.post("/api/users/:id/quiz", async (req, res) => {
   try {
     const { quizId, answers } = req.body;
     const { id } = req.params;
