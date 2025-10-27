@@ -170,11 +170,7 @@ app.post("/api/users/:id/quiz", async (req, res) => {
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
 
     // 🔹 1. Buscar recomendações do grafo
-    const baseURL =
-      process.env.NODE_ENV === "production"
-        ? "https://cinelearn.onrender.com"
-        : `http://127.0.0.1:${PORT}`;
-
+    const baseURL = "https://cinelearn.onrender.com";
     console.log("🔍 Chamando recomendação via:", `${baseURL}/api/recommendations/graph/${id}`);
 
     const recResponse = await fetch(`${baseURL}/api/recommendations/graph/${id}`, {
