@@ -280,7 +280,7 @@ app.post("/api/users/:id/quiz", async (req, res) => {
 });
 
 // Atualizar dados do usuário
-app.put("/users/:id", async (req, res) => {
+app.put("/api/users/:id", async (req, res) => {
   const id = req.params.id.trim();
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -301,7 +301,7 @@ app.put("/users/:id", async (req, res) => {
 });
 
 // Salvar avaliação de filme do usuário
-app.post("/users/:id/ratings", async (req, res) => {
+app.post("/api/users/:id/ratings", async (req, res) => {
   const id = req.params.id.trim();
   const { movieId, rating } = req.body;
 
@@ -357,7 +357,7 @@ app.post("/ratings", async (req, res) => {
 });
 
 // Adiciona um filme aos favoritos do usuário
-app.post("/users/:id/favorites", async (req, res) => {
+app.post("/api/users/:id/favorites", async (req, res) => {
   const { id } = req.params;
   const { movieId } = req.body;
 
@@ -383,7 +383,7 @@ app.post("/users/:id/favorites", async (req, res) => {
 });
 
 // Remove um filme dos favoritos do usuário
-app.delete("/users/:id/favorites/:movieId", async (req, res) => {
+app.delete("/api/users/:id/favorites/:movieId", async (req, res) => {
   const { id, movieId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -405,7 +405,7 @@ app.delete("/users/:id/favorites/:movieId", async (req, res) => {
 });
 
 // Lista os filmes favoritos do usuário
-app.get("/users/:id/favorites", async (req, res) => {
+app.get("/api/users/:id/favorites", async (req, res) => {
   const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
