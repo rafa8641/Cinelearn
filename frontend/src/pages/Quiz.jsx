@@ -42,7 +42,7 @@ export default function Quiz() {
       );
 
       // 🔹 1. Salva no backend e recebe o quiz populado
-      const saveRes = await fetch(`http://localhost:5000/users/${user._id}/quiz`, {
+      const saveRes = await fetch(`https://cinelearn.onrender.com/users/${user._id}/quiz`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -55,7 +55,7 @@ export default function Quiz() {
       const result = await saveRes.json();
 
       // 🔹 2. Atualiza o contexto do usuário com o novo histórico
-      const refreshedUser = await fetch(`http://localhost:5000/users/${user._id}`).then((r) =>
+      const refreshedUser = await fetch(`https://cinelearn.onrender.com/users/${user._id}`).then((r) =>
         r.json()
       );
       updateUser(refreshedUser);
