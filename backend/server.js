@@ -10,12 +10,30 @@ import cors from "cors";
 
 dotenv.config();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://cinelearn-v8kq.vercel.app",
+  "https://cinelearn-three.vercel.app", // ✅ novo domínio da Vercel
+];
+
 const app = express();
-app.use(cors({
-  origin: ["http://localhost:5173", "https://cinelearn-v8kq.vercel.app"],
-  methods: ["GET","POST","PUT","DELETE","PATCH","OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Permite requests sem origem (ex: Postman, Render internal calls)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("CORS not allowed for this origin: " + origin));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
