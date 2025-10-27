@@ -1,24 +1,29 @@
-import axios from "axios";
+import { apiFetch } from "./api";
 
-// Aqui o endereço base da sua API backend
-const API_URL = "http://localhost:5000/api";
+// LOGIN
+export async function loginUser({ email, password }) {
+  const res = await apiFetch("/api/users/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
 
-export const loginUser = async (credentials) => {
-  try {
-    const response = await axios.post(`${API_URL}/users/login`, credentials);
-    return response.data;
-  } catch (error) {
-    console.error("Erro ao fazer login:", error);
-    throw error;
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Login falhou: ${res.status} ${errText}`);
   }
-};
+  return res.json();
+}
 
-export const registerUser = async (userData) => {
-  try {
-    const response = await axios.post(`${API_URL}/users/register`, userData);
-    return response.data;
-  } catch (error) {
-    console.error("Erro ao cadastrar usuário:", error);
-    throw error;
+// REGISTER
+export async function registerUser(userData) {
+  const res = await apiFetch("/api/users/register", {
+    method: "POST",
+    body: JSON.stringify(userData),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Cadastro falhou: ${res.status} ${errText}`);
   }
-};
+  return res.json();
+}
