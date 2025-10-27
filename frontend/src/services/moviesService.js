@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const BASE_URL = import.meta.env.VITE_API_URL || "https://cinelearn.onrender.com";
 
 // 🔹 Helper opcional para incluir token (se houver login)
 function withAuth(headers = {}, token) {
