@@ -13,7 +13,6 @@
   <img src="https://img.shields.io/badge/Express.js-black?logo=express" alt="Express" />
   <img src="https://img.shields.io/badge/MongoDB-Atlas-green?logo=mongodb" alt="MongoDB" />
   <img src="https://img.shields.io/badge/TMDB-API-blue?logo=themoviedatabase" alt="TMDB API" />
-  <img src="https://img.shields.io/badge/TailwindCSS-3.0-38bdf8?logo=tailwindcss" alt="TailwindCSS" />
 </p>
 
 ---
@@ -31,7 +30,6 @@ A recomendação é feita sem uso de IA — e sim com **teoria dos grafos**, gar
 
 ### 💻 **Frontend**
 - ⚛️ React.js  
-- 🎨 TailwindCSS  
 - 🧭 React Router  
 - 💾 Context API  
 
