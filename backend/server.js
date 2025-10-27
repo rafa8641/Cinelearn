@@ -12,8 +12,7 @@ dotenv.config();
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://cinelearn-v8kq.vercel.app",
-  "https://cinelearn-three.vercel.app", // ✅ novo domínio da Vercel
+  "https://cinelearn-three.vercel.app",
 ];
 
 const app = express();
@@ -21,18 +20,22 @@ const app = express();
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Permite requests sem origem (ex: Postman, Render internal calls)
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // permite chamadas internas
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       } else {
-        return callback(new Error("CORS not allowed for this origin: " + origin));
+        console.warn("🚫 CORS bloqueado para:", origin);
+        return callback(new Error("CORS não permitido para esta origem: " + origin));
       }
     },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
+
+app.options("*", cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
