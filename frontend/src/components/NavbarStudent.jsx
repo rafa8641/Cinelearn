@@ -2,7 +2,8 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";
 import "../styles/NavbarStudent.css";
-import logo from "../assets/logo.svg";
+import logoAluno from "../assets/logo_aluno.svg";
+import logoProfessor from "../assets/logo_professor.svg";
 
 export default function NavbarStudent() {
   const { user, logout } = useUser();
@@ -55,6 +56,9 @@ export default function NavbarStudent() {
     navigate("/");
   };
 
+  // 🔹 Escolhe logo com base no papel do usuário
+  const logo = user?.role === "professor" ? logoProfessor : logoAluno;
+
   return (
     <nav className="navbar-student">
       <div className="navbar-left">
@@ -62,7 +66,12 @@ export default function NavbarStudent() {
           to={user?.role === "professor" ? "/teacher-home" : "/student-home"}
           className="navbar-logo"
         >
-          <img src={logo} alt="CineLearn" />
+          <img
+            src={logo}
+            alt="CineLearn"
+            className="navbar-logo-img"
+            style={{ height: user?.role === "professor" || user?.role === "aluno" ? "60px" : "40px" }}
+          />
         </Link>
 
         {!hideSearch && (

@@ -11,7 +11,6 @@ const movieSchema = new mongoose.Schema({
   originalTitle: String,
   releaseYear: Number,
   genres: [Object],
-  educationalTags: [String],
   keywords: [keywordSchema],
   rating: String,
   language: String,

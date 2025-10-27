@@ -63,7 +63,7 @@ app.get("/api/movies/filter", async (req, res) => {
           {
             $or: [
               { minAge: null },
-              { minAge: { $gte: userAge } },
+              { minAge: { $lte: userAge } },
               { minAge: { $exists: false } },
             ],
           },

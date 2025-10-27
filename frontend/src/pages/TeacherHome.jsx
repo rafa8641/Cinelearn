@@ -163,11 +163,11 @@ export default function TeacherHome() {
           >
             <option value="">Todas as Classificações</option>
             <option value="0">Livre</option>
-            <option value="10">A partir de 10 anos</option>
-            <option value="12">A partir de 12 anos</option>
-            <option value="14">A partir de 14 anos</option>
-            <option value="16">A partir de 16 anos</option>
-            <option value="18">A partir de 18 anos</option>
+            <option value="10">Até 10 anos</option>
+            <option value="12">Até 12 anos</option>
+            <option value="14">Até 14 anos</option>
+            <option value="16">Até 16 anos</option>
+            <option value="18">Até 18 anos</option>
           </select>
         </div>
 

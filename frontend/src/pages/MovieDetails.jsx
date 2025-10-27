@@ -60,6 +60,9 @@ export default function MovieDetails() {
         <div className="movie-info-section">
           <h1>{movie.title}</h1>
           <p className="movie-original-title">{movie.originalTitle}</p>
+          <p className="text-sm text-gray-600">
+            Classificação indicativa: <strong>{movie.rating || 'Não informado'}</strong>
+          </p>
           <p className="movie-year">{movie.releaseYear || "Ano desconhecido"}</p>
 
           <div className="stars">

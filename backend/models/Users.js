@@ -17,10 +17,6 @@ const UserSchema = new mongoose.Schema({
       createdAt: { type: Date, default: Date.now }, // ✅ salva automaticamente a data
     }
   ],
-  recommendations: [
-    { type: String, ref: "Movie" }
-  ],
-  photo: { type: String, default: "" }, 
   favorites: [
     {
       type: String,

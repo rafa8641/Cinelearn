@@ -76,11 +76,11 @@ export const quizConfig = [
     question: "Qual classificação indicativa deseja considerar (idade mínima)?",
     options: [
       { id: "0", label: "Livre para todos os públicos" },
-      { id: "10", label: "A partir de 10 anos" },
-      { id: "12", label: "A partir de 12 anos" },
-      { id: "14", label: "A partir de 14 anos" },
-      { id: "16", label: "A partir de 16 anos" },
-      { id: "18", label: "A partir de 18 anos" },
+      { id: "10", label: "Até 10 anos" },
+      { id: "12", label: "Até 12 anos" },
+      { id: "14", label: "Até 14 anos" },
+      { id: "16", label: "Até 16 anos" },
+      { id: "18", label: "Até 18 anos" },
     ],
     visibleFor: ["professor"],
   }
