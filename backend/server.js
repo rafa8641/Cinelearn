@@ -39,7 +39,6 @@ app.options(/.*/, cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api/users", userRoutes);
 
 app.get("/ping", (req, res) => {
   res.json({ message: "API está funcionando 🚀" });
@@ -573,6 +572,7 @@ app.get("/api/movies/genres", async (req, res) => {
   }
 });
 
+app.use("/api/users", userRoutes);
 app.use("/api/movies", movieRoutes);
 
 mongoose.connect(process.env.MONGODB_URI, {
