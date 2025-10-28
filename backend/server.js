@@ -10,37 +10,12 @@ import cors from "cors";
 
 dotenv.config();
 
-const PORT = process.env.PORT || 5000;
-
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://cinelearn-three.vercel.app",
-];
-
 const app = express();
-
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // permite chamadas internas
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        console.warn("🚫 CORS bloqueado para:", origin);
-        return callback(new Error("CORS não permitido para esta origem: " + origin));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
-
-app.options(/.*/, cors());
-
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use("/api/users", userRoutes);
 
 app.get("/ping", (req, res) => {
   res.json({ message: "API está funcionando 🚀" });
@@ -160,127 +135,47 @@ app.get("/movies", async (req, res) => {
   }
 });
 
-// ✅ Salvar quiz e retornar filmes recomendados corretamente (sem fetch interno)
-app.post("/api/users/:id/quiz", async (req, res) => {
+// Criar um novo usuário
+app.post("/users", async (req, res) => {
   try {
-    const { quizId, answers } = req.body;
-    const { id } = req.params;
-
-    const user = await Users.findById(id);
-    if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
-
-    // 🔹 Em vez de chamar o endpoint via HTTP, chamamos a função diretamente:
-    const graphData = await (async () => {
-      const quizKeywords = (answers || [])
-        .flatMap(a => (Array.isArray(a) ? a : [a]))
-        .map(s => s.toString().trim().toLowerCase())
-        .filter(Boolean);
-
-      if (quizKeywords.length === 0) return { recommendations: [] };
-
-      let selectedType = "both";
-      if (quizKeywords.includes("filmes")) selectedType = "movie";
-      else if (quizKeywords.includes("séries") || quizKeywords.includes("series")) selectedType = "tv";
-
-      let quizSelectedAge = 0;
-      const ageAnswer = quizKeywords.find(a => a.includes("anos"));
-      if (ageAnswer) {
-        const m = ageAnswer.match(/\d+/);
-        if (m) quizSelectedAge = parseInt(m[0], 10);
-      }
-
-      const role = (user.role || "").toLowerCase();
-      const effectiveAge =
-        role === "professor" ? quizSelectedAge || 0 : Number(user.age) || 0;
-
-      const typeFilter =
-        selectedType === "both"
-          ? {}
-          : selectedType === "movie"
-          ? {
-              $or: [
-                { "tmdbData.media_type": "movie" },
-                { "tmdbData.media_type": { $exists: false } },
-              ],
-            }
-          : { "tmdbData.media_type": "tv" };
-
-      const ageFilter =
-        effectiveAge > 0
-          ? {
-              $and: [
-                { $or: [{ minAge: null }, { minAge: { $lte: effectiveAge } }, { minAge: { $exists: false } }] },
-                { $or: [{ maxAge: null }, { maxAge: { $gte: effectiveAge } }, { maxAge: { $exists: false } }] },
-              ],
-            }
-          : { $or: [{ minAge: null }, { minAge: { $lte: 18 } }, { minAge: { $exists: false } }] };
-
-      const regexKeywords = quizKeywords.map(k => new RegExp(k, "i"));
-
-      let movies = await Movie.find({
-        ...typeFilter,
-        ...ageFilter,
-        $or: [
-          { "keywords.name": { $in: regexKeywords } },
-          { "genres.name": { $in: regexKeywords } },
-          { genres: { $in: regexKeywords } },
-        ],
-      }).lean();
-
-      if (!movies || movies.length === 0) {
-        movies = await Movie.find({ ...typeFilter, ...ageFilter }).lean();
-      }
-
-      const weightedMovies = movies.map(movie => {
-        let score = 0;
-        const mkCount = Array.isArray(movie.keywords)
-          ? movie.keywords.filter(k =>
-              quizKeywords.includes(String(k.name || "").toLowerCase())
-            ).length
-          : 0;
-        score += mkCount * 8;
-        score += (movie.tmdbData?.vote_average || 0) * 2;
-        score += Math.random() * 3;
-        return { ...movie, score };
-      });
-
-      weightedMovies.sort((a, b) => b.score - a.score);
-
-      return {
-        recommendations: weightedMovies.slice(0, 5),
-      };
-    })();
-
-    const recommendedIds = (graphData.recommendations || [])
-      .filter(r => r && r._id)
-      .map(r => r._id);
-
-    const newQuiz = {
-      quizId: quizId || "educacional",
-      answers: answers || [],
-      recommendations: recommendedIds,
-      createdAt: new Date(),
-    };
-
-    user.quizResults.push(newQuiz);
+    const { name, email, age } = req.body;
+    const user = new Users({ name, email, age, ratings: [] });
     await user.save();
+    res.status(201).json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: "Erro ao criar usuário" });
+  }
+});
 
-    const fullMovies = await Movie.find({ _id: { $in: recommendedIds } })
-      .select("title tmdbData")
+// Buscar usuário pelo ID
+app.get("/users/:id", async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "ID inválido" });
+  }
+
+  try {
+    const user = await Users.findById(id)
+      .populate("favorites")
+      .populate({
+        path: "quizResults.recommendations",
+        model: "Movie",
+      })
       .lean();
 
-    res.json({
-      message: "Quiz salvo com sucesso!",
-      quiz: { ...newQuiz, recommendations: fullMovies },
-    });
+    if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+
+    res.json(user);
   } catch (err) {
-    console.error("❌ Erro ao salvar quiz:", err);
-    res.status(500).json({ error: "Erro ao salvar quiz", details: err.message });
+    console.error("Erro ao buscar usuário:", err);
+    res.status(500).json({ error: "Erro ao buscar usuário" });
   }
 });
 
 // Atualizar dados do usuário
-app.put("/api/users/:id", async (req, res) => {
+app.put("/users/:id", async (req, res) => {
   const id = req.params.id.trim();
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -301,7 +196,7 @@ app.put("/api/users/:id", async (req, res) => {
 });
 
 // Salvar avaliação de filme do usuário
-app.post("/api/users/:id/ratings", async (req, res) => {
+app.post("/users/:id/ratings", async (req, res) => {
   const id = req.params.id.trim();
   const { movieId, rating } = req.body;
 
@@ -357,7 +252,7 @@ app.post("/ratings", async (req, res) => {
 });
 
 // Adiciona um filme aos favoritos do usuário
-app.post("/api/users/:id/favorites", async (req, res) => {
+app.post("/users/:id/favorites", async (req, res) => {
   const { id } = req.params;
   const { movieId } = req.body;
 
@@ -383,7 +278,7 @@ app.post("/api/users/:id/favorites", async (req, res) => {
 });
 
 // Remove um filme dos favoritos do usuário
-app.delete("/api/users/:id/favorites/:movieId", async (req, res) => {
+app.delete("/users/:id/favorites/:movieId", async (req, res) => {
   const { id, movieId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -405,7 +300,7 @@ app.delete("/api/users/:id/favorites/:movieId", async (req, res) => {
 });
 
 // Lista os filmes favoritos do usuário
-app.get("/api/users/:id/favorites", async (req, res) => {
+app.get("/users/:id/favorites", async (req, res) => {
   const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -582,6 +477,67 @@ app.post("/api/recommendations/graph/:userId", async (req, res) => {
   }
 });
 
+// ✅ Salvar quiz e retornar filmes recomendados corretamente
+app.post("/users/:id/quiz", async (req, res) => {
+  try {
+    const { quizId, answers } = req.body;
+    const { id } = req.params;
+
+    const user = await Users.findById(id);
+    if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+
+    // 🔹 1. Buscar recomendações do grafo
+    const recResponse = await fetch(`http://localhost:5000/api/recommendations/graph/${id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers }),
+    });
+    const recData = await recResponse.json();
+
+    // 🔹 2. Extrair IDs de string
+    const recommendedIds = (recData.recommendations || [])
+      .filter(r => r && r._id)
+      .map(r => r._id);
+
+    console.log("🎬 IDs de filmes recomendados:", recommendedIds);
+
+    // 🔹 3. Criar novo quiz com recomendações (strings)
+    const newQuiz = {
+      quizId: quizId || "educacional",
+      answers: answers || [],
+      recommendations: recommendedIds,
+      createdAt: new Date(),
+    };
+
+    // 🔹 4. Adicionar o quiz ao usuário
+    user.quizResults.push(newQuiz);
+    await user.save();
+
+    // 🔹 5. Buscar os filmes correspondentes
+    const fullMovies = await Movie.find({ _id: { $in: recommendedIds } })
+      .select("title tmdbData")
+      .lean();
+
+    console.log("📽️ Filmes encontrados:", fullMovies.length);
+
+    // 🔹 6. Atualizar a entrada do quiz com os filmes populados
+    const populatedQuiz = {
+      ...newQuiz,
+      recommendations: fullMovies,
+    };
+
+    // 🔹 7. Retornar o quiz populado
+    res.json({
+      message: "Quiz salvo com sucesso!",
+      quiz: populatedQuiz,
+    });
+
+  } catch (err) {
+    console.error("❌ Erro ao salvar quiz:", err);
+    res.status(500).json({ error: "Erro ao salvar quiz", details: err.message });
+  }
+});
+
 // 🔹 Rota para listar todos os gêneros existentes no banco
 app.get("/api/movies/genres", async (req, res) => {
   try {
@@ -593,7 +549,6 @@ app.get("/api/movies/genres", async (req, res) => {
   }
 });
 
-app.use("/api/users", userRoutes);
 app.use("/api/movies", movieRoutes);
 
 mongoose.connect(process.env.MONGODB_URI, {
@@ -603,6 +558,6 @@ mongoose.connect(process.env.MONGODB_URI, {
 .then(() => console.log("✅ API conectada ao MongoDB"))
 .catch(err => console.error("Erro ao conectar:", err));
 
-
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
 
